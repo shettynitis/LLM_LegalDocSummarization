@@ -42,24 +42,26 @@ you will link to their contributions in this repo (or multiple repos if you spli
 | Sakshi Goenka       | - Data pipeline (Unit 8)<br>- Persistent storage & data ingestion<br>- Online/offline data management                        | [Commits by Sakshi](https://github.com/shettynitis/LLM_LegalDocSummarization/edit/main/README.md)     |
 
 
-### System diagram
+### System Diagram
 
 <!-- Overall digram of system. Doesn't need polish, does need to show all the pieces. 
 Must include: all the hardware, all the containers/software platforms, all the models, 
 all the data. -->
 
-### Summary of outside materials
+### Summary of Outside Materials
 
 <!-- In a table, a row for each dataset, foundation model. 
 Name of data/model, conditions under which it was created (ideally with links/references), 
 conditions under which it may be used. -->
 
-|              | How it was created | Conditions of use |
-|--------------|--------------------|-------------------|
-| Data set 1   |                    |                   |
-| Data set 2   |                    |                   |
-| Base model 1 |                    |                   |
-| etc          |                    |                   |
+| Name / Version                | How It Was Created                                                                                                  | Conditions of Use                                                               |
+|-------------------------------|----------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
+| **Zenodo Legal Dataset**      | Curated from publicly available court rulings, case files, and legal judgments. | |
+| **Additional Legal Docs**     | Internal or publicly released legal documents from open data portals; combined and pre-processed by the team.       |  |
+| **Llama-2-7b** (Meta)        | Pretrained by Meta on diverse text sources. Available via Hugging Face with special access.                          | Must adhere to Meta’s Model License and Hugging Face usage agreements.           |
+| **FAISS** (Vector Store)      | Open-source library for efficient similarity search. Developed by Facebook AI Research.                             | Apache-2.0 license; can be used and distributed freely.                          |
+| **LoRA / `trl` Library**      | Open-source Python library enabling parameter-efficient fine-tuning of LLMs.                                        | Various open-source licenses.     |
+
 
 
 ### Summary of infrastructure requirements
@@ -67,14 +69,12 @@ conditions under which it may be used. -->
 <!-- Itemize all your anticipated requirements: What (`m1.medium` VM, `gpu_mi100`), 
 how much/when, justification. Include compute, floating IPs, persistent storage. 
 The table below shows an example, it is not a recommendation. -->
-
-| Requirement     | How many/when                                     | Justification |
-|-----------------|---------------------------------------------------|---------------|
-| `m1.medium` VMs | 3 for entire project duration                     | ...           |
-| `gpu_mi100`     | 4 hour block twice a week                         |               |
-| Floating IPs    | 1 for entire project duration, 1 for sporadic use |               |
-| etc             |                                                   |               |
-
+| Requirement               | How many/when                                 | Justification                                                                                                                        |
+|---------------------------|-----------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
+| **`m1.medium` VMs**       | 2 permanent VMs + 1 staging VM               | - **2 permanent**: one hosts the production RAG API and FAISS index, the other runs MLflow and DevOps automation<br>- **1 staging**: used for load testing, integration tests, and canary deployment before going live                                                                                                                     |
+| **GPU nodes (`A100` or `mi100`)** | 2 nodes for ~4 hours/session, up to 2x/week | - Needed for fine-tuning Llama-2-7b with LoRA<br>- Each session covers hyperparameter tuning or retraining on new data<br>- If doing distributed training, 2 GPUs can be used concurrently for faster experimentation                                                                                                                 |
+| **Floating IPs**          | 1 permanent for production + 1 on-demand for staging | - **Production**: Exposes the API externally so users (or graders) can query the summarization service<br>- **On-demand**: Temporarily attach to staging when we need external testing or demos                                                                                                                                    |
+| **Persistent Volume (~50–100GB)** | Attached for the entire project       | - Stores the legal dataset (Zenodo files), preprocessed text chunks, fine-tuned model artifacts, and any large logs<br>- Avoids having to re-download or re-process data every time we redeploy                                                                                            |
 ### Detailed design plan
 
 <!-- In each section, you should describe (1) your strategy, (2) the relevant parts of the 
