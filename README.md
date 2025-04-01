@@ -26,21 +26,6 @@ Our project is similar to existing ML-based legal software like Kira Systems and
   
 By integrating automated summarization into existing legal workflows, this system aims to streamline document handling while maintaining high-quality analysis.
 
-### Contributors
-
-<!-- Table of contributors and their roles. 
-First row: define responsibilities that are shared by the team. 
-Then, each row after that is: name of contributor, their role, and in the third column, 
-you will link to their contributions. If your project involves multiple repos, you will 
-link to their contributions in all repos here. -->
-
-| Name                            | Responsible for | Link to their commits in this repo |
-|---------------------------------|-----------------|------------------------------------|
-| All team members                |                 |                                    |
-| Team member 1                   |                 |                                    |
-| Team member 2                   |                 |                                    |
-| Team member 3                   |                 |                                    |
-| Team member 4 (if there is one) |                 |                                    |
 
 ### Contributors
 
@@ -52,11 +37,9 @@ you will link to their contributions in this repo (or multiple repos if you spli
 | Name              | Responsible for                                                                                                              | Link to their commits in this repo                                                        |
 |-------------------|------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
 | All team members  | - Overall project idea<br>- High-level system design<br>- CI/CD and Continuous Training (Unit 3) <br>- Final integration & docs | [All contributions](https://github.com/shettynitis/LLM_LegalDocSummarization/edit/main/README.md)                         |
-| Navya Kriti     | - Model training (Units 4 & 5)<br>-> LoRA fine-tuning with Ray cluster<br>-> Experiment tracking & logging (MLflow)            | [Commits by Navya](https://github.com/shettynitis/LLM_LegalDocSummarization/edit/main/README.md)   |
-| Nitisha Shetty    | - Model serving & monitoring (Units 6 & 7)<br>-> Building inference API<br>-> Load testing, staged & canary deployment         | [Commits by Nitisha](https://github.com/shettynitis/LLM_LegalDocSummarization/edit/main/README.md) |
-| Sakshi Goenka       | - Data pipeline (Unit 8)<br>-> Persistent storage & data ingestion<br>-> Online/offline data management                        | [Commits by Sakshi](https://github.com/shettynitis/LLM_LegalDocSummarization/edit/main/README.md)     |
-
-
+| Navya Kriti     | - Model training (Units 4 & 5)<br>- LoRA fine-tuning with Ray cluster<br>- Experiment tracking & logging (MLflow)            | [Commits by Navya](https://github.com/shettynitis/LLM_LegalDocSummarization/edit/main/README.md)   |
+| Nitisha Shetty    | - Model serving & monitoring (Units 6 & 7)<br>- Building inference API<br>- Load testing, staged & canary deployment         | [Commits by Nitisha](https://github.com/shettynitis/LLM_LegalDocSummarization/edit/main/README.md) |
+| Sakshi Goenka       | - Data pipeline (Unit 8)<br>- Persistent storage & data ingestion<br>- Online/offline data management                        | [Commits by Sakshi](https://github.com/shettynitis/LLM_LegalDocSummarization/edit/main/README.md)     |
 
 
 ### System diagram
