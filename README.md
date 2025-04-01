@@ -1,4 +1,4 @@
-## Title of project
+## Legal Document Summarization
 
 <!-- 
 Discuss: Value proposition: Your will propose a machine learning system that can be 
@@ -9,6 +9,22 @@ status quo used in the business or service? What business metric are you going t
 judged on? (Note that the “service” does not have to be for general users; you can 
 propose a system for a science problem, for example.)
 -->
+
+### Value Proposition
+
+Law firms and legal departments invest significant time and cost into manually reading, annotating, and summarizing lengthy legal documents—judgments, case files, contracts. Our system addresses this gap by fine-tuning Llama-2-7b with a Retrieval-Augmented Generation (RAG) pipeline to:
+
+1. Identify relevant documents from a repository
+2. Automatically generate accurate, concise summaries
+
+Our project is similar to existing ML-based legal software like Kira Systems and Casetext that tackles contract review and search.
+
+**Business Metrics**
+* Time Saved: Fewer hours spent summarizing.
+* Cost Reduction: Reallocate billable hours to higher-value tasks.
+* Quality: Measure summary completeness (e.g., ROUGE scores, user feedback).
+  
+By integrating automated summarization into existing legal workflows, this system aims to streamline document handling while maintaining high-quality analysis.
 
 ### Contributors
 
