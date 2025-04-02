@@ -1,4 +1,4 @@
-## Legal Document Summarization
+## Legal Document Summarizer
 
 <!-- 
 Discuss: Value proposition: Your will propose a machine learning system that can be 
@@ -75,7 +75,9 @@ The table below shows an example, it is not a recommendation. -->
 | **GPU nodes (`A100` or `mi100`)** | 2 nodes for ~4 hours/session, up to 2x/week | - Needed for fine-tuning Llama-2-7b with LoRA<br>- Each session covers hyperparameter tuning or retraining on new data<br>- If doing distributed training, 2 GPUs can be used concurrently for faster experimentation                                                                                                                 |
 | **Floating IPs**          | 1 permanent for production + 1 on-demand for staging | - **Production**: Exposes the API externally so users (or graders) can query the summarization service<br>- **On-demand**: Temporarily attach to staging when we need external testing or demos                                                                                                                                    |
 | **Persistent Volume (~50–100GB)** | Attached for the entire project       | - Stores the legal dataset (Zenodo files), preprocessed text chunks, fine-tuned model artifacts, and any large logs<br>- Avoids having to re-download or re-process data every time we redeploy                                                                                            |
-### Detailed design plan
+
+
+### Detailed Design Plan
 
 <!-- In each section, you should describe (1) your strategy, (2) the relevant parts of the 
 diagram, (3) justification for your strategy, (4) relate back to lecture material, 
@@ -85,6 +87,27 @@ diagram, (3) justification for your strategy, (4) relate back to lecture materia
 
 <!-- Make sure to clarify how you will satisfy the Unit 4 and Unit 5 requirements, 
 and which optional "difficulty" points you are attempting. -->
+
+1. Strategy
+* We will fine-tune Llama-2-7b using LoRA on a Ray cluster (GPU nodes on Chameleon).
+* This ensures we can handle large-scale data, while the LoRA approach keeps GPU usage manageable.
+* We will track metrics (loss, ROUGE, hyperparams) in MLflow, also hosted on Chameleon.
+2. Diagram References
+* In the “Training” section of our system diagram, data from the Data Pipeline feeds into the Ray cluster.
+* MLflow logs are stored on a CPU node, giving us experiment histories and artifact versioning.
+3. Justification
+* LoRA is a parameter-efficient method for large LLM fine-tuning, reducing GPU memory overhead.
+* Using Ray + MLflow ensures we can do robust scheduling and logging, consistent with class best practices.
+4. Relation to Lecture Material
+* Unit 4: We meet “train and re-train” by repeatedly fine-tuning Llama-2-7b on new or updated data.
+* Unit 5: Self-hosted MLflow on Chameleon tracks all runs. A Ray cluster schedules training jobs (just like in the labs).
+5. Specific Numbers
+* GPU usage: ~3–6 GPU hours per training session (depending on dataset size).
+* Data: ~10,000 legal documents from Zenodo, chunked to ~512–1,024 tokens each.
+* Extra Difficulty (Unit 4/5):
+  - Using Ray Train
+  - Training strategies for large models
+
 
 #### Model serving and monitoring platforms
 
