@@ -115,12 +115,72 @@ and which optional "difficulty" points you are attempting. -->
 <!-- Make sure to clarify how you will satisfy the Unit 6 and Unit 7 requirements, 
 and which optional "difficulty" points you are attempting. -->
 
+1. Strategy
+* We will containerize a FastAPI-based inference service that does Retrieval-Augmented Generation (RAG).
+* At inference, a FAISS index (or TF-IDF) retrieves relevant docs; the fine-tuned Llama-2-7b model then summarizes them.
+* We’ll do load testing in staging, then optionally a canary environment before production.
+* Online monitoring will capture performance metrics and user feedback.
+2. Diagram References
+* The “Deployment” section: RAG Vector DB + Summarization Model containers.
+* The “Monitoring” block receives logs and metrics from production.
+3. Justification
+* Splitting out retrieval from generation is standard RAG practice: it reduces total model memory usage and ensures relevant documents are provided.
+* We will track concurrency (aiming for ~5–7 concurrent requests) and keep latencies as low as possible.
+4. Relation to Lecture Material
+* Unit 6: An API endpoint with explicit performance/latency goals. Possibly use 4-bit or 8-bit quantization to optimize.
+* Unit 7: We incorporate offline evaluation (ROUGE), load testing in staging, canary deployment, and continuous monitoring.
+5. Specific Numbers
+* Latency: <10 seconds on average for one summarization query.
+* Load: ~20 RPS in staging to test concurrency.
+* Close the Loop: If user feedback indicates poor results, we mark those examples for future re-training.
+
 #### Data pipeline
 
 <!-- Make sure to clarify how you will satisfy the Unit 8 requirements,  and which 
 optional "difficulty" points you are attempting. -->
 
+1. Strategy
+* Persistent storage on Chameleon (50–100 GB) holds the chunked legal dataset, model artifacts, etc.
+* Python ETL scripts fetch, clean, and split raw legal texts from Zenodo or other sources.
+* The pipeline is triggered whenever new data arrives.
+2. Diagram References
+* The “Data Source” box in the system design feeds training data into the Ray cluster.
+* We store outputs in the “Persistent Storage” volume, accessible by both training and serving components.
+3. Justification
+* Offline data management ensures stable re-training.
+* If the system sees newly labeled or user-provided data, we can incorporate it into the next training cycle.
+4. Relation to Lecture Material
+* Unit 8: Following Lab 8’s approach to storage provisioning(as per the project manual), we will attach a volume or use object storage on Chameleon.
+* We also simulate real-time data by generating user queries to test the pipeline in staging/canary.
+5. Specific Numbers
+* 50–100 GB capacity volume.
+* Data updated weekly or on a manual schedule.
+
+
 #### Continuous X
 
 <!-- Make sure to clarify how you will satisfy the Unit 3 requirements,  and which 
 optional "difficulty" points you are attempting. -->
+
+1.Strategy
+* We define infrastructure-as-code using Terraform or python-chi to spin up CPU/GPU nodes on Chameleon.
+* Our CI/CD pipeline automates:
+- Retraining on new data,
+- Running offline eval,
+- Packaging the model in a Docker image,
+- Deploying to staging for tests,
+- Promoting to canary,
+- Deploying to production.
+2. Diagram References
+* The central CI/CD block orchestrates the entire pipeline.
+* Staging, canary, and production are distinct nodes or container groups in the our deplyment block.
+4. Justification
+* Minimizes “clickOps,” ensures reproducibility and version control.
+* Cloud-native approach: everything is containerized, and changes are made by updating Git, not manually configuring servers.
+5. Relation to Lecture Material
+* Unit 3: Microservices in containers, staged deployments, and an automated pipeline for continuous training & integration.
+* We follow lab patterns: no manual edits to running instances (immutable infra).
+6. Specific Numbers
+* 1–2 GPU nodes for training, 2–3 CPU nodes for staging, production, MLflow, etc.
+* Staging tests include ~20 concurrency requests, canary ~10% traffic, then full production.
+
