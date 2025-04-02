@@ -36,10 +36,10 @@ you will link to their contributions in this repo (or multiple repos if you spli
 
 | Name              | Responsible for                                                                                                              | Link to their commits in this repo                                                        |
 |-------------------|------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
-| All team members  | - Overall project idea<br>- High-level system design<br>- CI/CD and Continuous Training (Unit 3) <br>- Final integration & docs | [All contributions](https://github.com/shettynitis/LLM_LegalDocSummarization/edit/main/README.md)                         |
-| Navya Kriti     | - Model training (Units 4 & 5)<br>- LoRA fine-tuning with Ray cluster<br>- Experiment tracking & logging (MLflow)            | [Commits by Navya](https://github.com/shettynitis/LLM_LegalDocSummarization/edit/main/README.md)   |
-| Nitisha Shetty    | - Model serving & monitoring (Units 6 & 7)<br>- Building inference API<br>- Load testing, staged & canary deployment         | [Commits by Nitisha](https://github.com/shettynitis/LLM_LegalDocSummarization/edit/main/README.md) |
-| Sakshi Goenka       | - Data pipeline (Unit 8)<br>- Persistent storage & data ingestion<br>- Online/offline data management                        | [Commits by Sakshi](https://github.com/shettynitis/LLM_LegalDocSummarization/edit/main/README.md)     |
+| All team members  | - Overall project idea<br>- High-level system design<br>- CI/CD and Continuous Training (Unit 3) <br>- Final integration & docs | [All contributions](https://github.com/shettynitis/LLM_LegalDocSummarization/commits)                         |
+| Navya Kriti     | - Model training (Units 4 & 5)<br>- LoRA fine-tuning with Ray cluster<br>- Experiment tracking & logging (MLflow)            | [Commits by Navya](https://github.com/shettynitis/LLM_LegalDocSummarization/commits?author=Navya0203)   |
+| Nitisha Shetty    | - Model serving & monitoring (Units 6 & 7)<br>- Building inference API<br>- Load testing, staged & canary deployment         | [Commits by Nitisha](https://github.com/shettynitis/LLM_LegalDocSummarization/commits?author=shettynitis) |
+| Sakshi Goenka       | - Data pipeline (Unit 8)<br>- Persistent storage & data ingestion<br>- Online/offline data management                        | [Commits by Sakshi](https://github.com/shettynitis/LLM_LegalDocSummarization/commits?author=robo-ro)     |
 
 
 ### System Diagram
