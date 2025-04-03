@@ -24,7 +24,7 @@ Our project is similar to existing ML-based legal software like Kira Systems and
 * Cost Reduction: Reallocate billable hours to higher-value tasks.
 * Quality: Measure summary completeness (e.g., ROUGE scores, user feedback).
   
-By integrating automated summarization into existing legal workflows, this system aims to streamline document handling while maintaining high-quality analysis.
+This system aims to streamline document handling while maintaining high-quality analysis by integrating automated summarization into existing legal workflows.
 
 
 ### Contributors
