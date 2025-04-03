@@ -47,7 +47,8 @@ you will link to their contributions in this repo (or multiple repos if you spli
 <!-- Overall digram of system. Doesn't need polish, does need to show all the pieces. 
 Must include: all the hardware, all the containers/software platforms, all the models, 
 all the data. -->
-![image](https://github.com/user-attachments/assets/0f673b10-9849-4c06-9273-4a2115a3389d)
+<img width="997" alt="Screenshot 2025-04-02 at 11 28 24 PM" src="https://github.com/user-attachments/assets/a2094e33-f22c-40da-a213-f71933e280c0" />
+
 
 ### Summary of Outside Materials
 
