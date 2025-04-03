@@ -17,7 +17,7 @@ Law firms and legal departments invest significant time and cost into manually r
 1. Identify relevant documents from a repository
 2. Automatically generate accurate, concise summaries
 
-Our project is similar to existing ML-based legal software like Kira Systems and Casetext that tackles contract review and search.
+Our project is similar to existing ML-based legal software like Kira Systems and Casetext that tackles contract/case judgement review and search.
 
 **Business Metrics**
 * Time Saved: Fewer hours spent summarizing.
