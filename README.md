@@ -162,7 +162,7 @@ optional "difficulty" points you are attempting. -->
 <!-- Make sure to clarify how you will satisfy the Unit 3 requirements,  and which 
 optional "difficulty" points you are attempting. -->
 
-1.Strategy
+1. Strategy
 * We define infrastructure-as-code using Terraform or python-chi to spin up CPU/GPU nodes on Chameleon.
 * Our CI/CD pipeline automates:
 - Retraining on new data,
