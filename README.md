@@ -165,12 +165,12 @@ optional "difficulty" points you are attempting. -->
 1. Strategy
 * We define infrastructure-as-code using Terraform or python-chi to spin up CPU/GPU nodes on Chameleon.
 * Our CI/CD pipeline automates:
-- Retraining on new data,
-- Running offline eval,
-- Packaging the model in a Docker image,
-- Deploying to staging for tests,
-- Promoting to canary,
-- Deploying to production.
+  - Retraining on new data,
+  - Running offline eval,
+  - Packaging the model in a Docker image,
+  - Deploying to staging for tests,
+  - Promoting to canary,
+  - Deploying to production.
 2. Diagram References
 * The central CI/CD block orchestrates the entire pipeline.
 * Staging, canary, and production are distinct nodes or container groups in the our deplyment block.
