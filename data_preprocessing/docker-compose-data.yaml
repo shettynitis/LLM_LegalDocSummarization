@@ -41,10 +41,11 @@ services:
   load-data:
     container_name: etl_load_data
     image: rclone/rclone:latest
+    user: root
     volumes:
-      - legal_data:/data
+      - ../merged_dataset:/data/merged_dataset:ro
       - ~/.config/rclone/rclone.conf:/root/.config/rclone/rclone.conf:ro
-    working_dir: /
+    working_dir: /data
     entrypoint: /bin/sh
     command:
       - -c
@@ -56,12 +57,13 @@ services:
           exit 1
         fi
 
-        echo "Cleaning remote container $RCLONE_CONTAINER…"
-        rclone delete chi_tacc:$RCLONE_CONTAINER --rmdirs || true
-
         echo "Uploading merged_dataset to chi_tacc:$RCLONE_CONTAINER…"
-        rclone copy /data/merged_dataset chi_tacc:$RCLONE_CONTAINER \
-          --progress --transfers=32 --checkers=16 --multi-thread-streams=4 --fast-list
+        rclone copy merged_dataset chi_tacc:$RCLONE_CONTAINER \
+          --progress \
+          --transfers=32 \
+          --checkers=16 \
+          --multi-thread-streams=4 \
+          --fast-list
 
         echo "Remote contents:"
         rclone lsd chi_tacc:$RCLONE_CONTAINER
