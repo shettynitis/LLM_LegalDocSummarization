@@ -1,0 +1,33 @@
+version: "3.8"
+
+volumes:
+  legal_data:
+    external: true
+
+services:
+  init-legal-data:
+    image: python:3.11-slim
+    volumes:
+      - legal_data:/data            # where the raw & processed data lives
+      - ./data_preprocessing.py:/data/data_preprocessing.py  # script
+    working_dir: /data
+    command: >
+      bash -e -c "
+        echo 'Installing curl & unzip…';
+        apt-get update -qq && apt-get install -qq -y curl unzip;
+
+        echo 'Downloading raw dataset…';
+        curl -sL 'https://zenodo.org/record/7152317/files/dataset.zip?download=1' -o dataset.zip;
+
+        echo 'Unpacking…';
+        unzip -q dataset.zip -d raw_data && rm dataset.zip;
+        
+        echo 'Installing Python deps…';
+        pip install --no-cache-dir tqdm;
+        
+        echo 'Running preprocessing script…';
+        python data_preprocessing.py raw_data merged_dataset;
+        
+        echo 'Done. Processed data is in /data/merged_dataset';
+      "
+    restart: "no"
