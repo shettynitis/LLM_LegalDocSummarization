@@ -1,0 +1,67 @@
+name: legal-data-etl
+
+volumes:
+  legal_data:
+
+services:
+
+  process-data:
+    container_name: etl_process_data
+    image: python:3.11-slim
+    user: root
+    volumes:
+      - legal_data:/data/raw_data
+      - ../merged_dataset:/data/merged_dataset
+      - ./data_preprocessing.py:/data/data_preprocessing.py
+    working_dir: /data
+    command:
+      - bash
+      - -c
+      - |
+        set -e
+
+        echo "Installing curl & unzip…"
+        apt-get update -qq && apt-get install -qq -y curl unzip
+
+        echo "Downloading Zenodo dataset…"
+        curl -sL "https://zenodo.org/record/7152317/files/dataset.zip?download=1" -o dataset.zip
+
+        echo "Unzipping…"
+        unzip -q dataset.zip -d raw_data && rm dataset.zip
+
+        echo "Installing Python deps…"
+        pip install --no-cache-dir tqdm
+
+        echo "Running preprocessing…"
+        python data_preprocessing.py raw_data merged_dataset
+
+        echo "Processed files in /data/merged_dataset:"
+        ls -l /data/merged_dataset
+
+  load-data:
+    container_name: etl_load_data
+    image: rclone/rclone:latest
+    volumes:
+      - legal_data:/data
+      - ~/.config/rclone/rclone.conf:/root/.config/rclone/rclone.conf:ro
+    working_dir: /
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        set -e
+
+        if [ -z "$RCLONE_CONTAINER" ]; then
+          echo "ERROR: RCLONE_CONTAINER is not set"
+          exit 1
+        fi
+
+        echo "Cleaning remote container $RCLONE_CONTAINER…"
+        rclone delete chi_tacc:$RCLONE_CONTAINER --rmdirs || true
+
+        echo "Uploading merged_dataset to chi_tacc:$RCLONE_CONTAINER…"
+        rclone copy /data/merged_dataset chi_tacc:$RCLONE_CONTAINER \
+          --progress --transfers=32 --checkers=16 --multi-thread-streams=4 --fast-list
+
+        echo "Remote contents:"
+        rclone lsd chi_tacc:$RCLONE_CONTAINER
