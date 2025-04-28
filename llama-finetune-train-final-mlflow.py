@@ -17,7 +17,7 @@ from peft import LoraConfig, get_peft_model
 import mlflow
 import mlflow.pytorch
 
-DATA_DIR   = "../dataset/processed-IN-Ext"
+DATA_DIR   = os.getenv("LEGAL_DATA_DIR", "merged_dataset")
 RESULT_DIR = {"full": "../results_full", "lora": "../results_lora"}
 SEED       = 42
 
@@ -84,11 +84,8 @@ def load_dataset(jsonl_file):
     return Dataset.from_dict({"text": texts})
 
 # Load datasets (original names preserved)
-train_file_A1 = os.path.join(preprocessed_data_dir, "full_summaries_A1.jsonl")
-train_file_A2 = os.path.join(preprocessed_data_dir, "full_summaries_A2.jsonl")
-train_dataset_A1 = load_dataset(train_file_A1)
-train_dataset_A2 = load_dataset(train_file_A2)
-train_data = concatenate_datasets([train_dataset_A1, train_dataset_A2])
+training_data_location = os.path.join(DATA_DIR, "train.jsonl")
+train_data = load_dataset(training_data_location)
 
 from transformers import AutoModelForCausalLM, BitsAndBytesConfig
 
