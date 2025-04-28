@@ -12,3 +12,14 @@ RUN pip install --pre --no-cache-dir pynvml && \
     pip install --pre --no-cache-dir mlflow && \
     fix-permissions "${CONDA_DIR}" && \
     fix-permissions "/home/${NB_USER}"
+
+RUN pip install --no-cache-dir \
+        transformers==4.40.0 \
+        datasets==2.19.0 \
+        trl==0.8.6 \
+        peft==0.10.0 \
+        bitsandbytes==0.45.5 \
+        evaluate rouge-score \
+        accelerate              \
+    && fix-permissions "${CONDA_DIR}" \
+    && fix-permissions "/home/${NB_USER}"
