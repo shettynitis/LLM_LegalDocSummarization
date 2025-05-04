@@ -1,0 +1,4 @@
+fastapi
+uvicorn[standard]
+onnxruntime-gpu   # provides TensorRT & CUDA EPs automatically
+transformers 

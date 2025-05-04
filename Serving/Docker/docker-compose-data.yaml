@@ -1,0 +1,26 @@
+volumes:
+  llm-data:                # or whatever name you used before
+    external: true
+
+services:
+  init-data:
+    image: python:3.11
+    working_dir: /data
+    volumes:
+      - llm-data:/data
+      - ./merged_dataset.zip:/tmp/merged_dataset.zip:ro   # NEW ←
+    command: |
+      bash -c "
+        set -e
+        echo 'Making target dir…'
+        mkdir -p /data/merged_dataset && cd /data/merged_dataset
+
+        echo 'Copying ZIP into the volume…'
+        cp /tmp/merged_dataset.zip .          # now lives *inside* llm-data
+
+        echo 'Extracting…'
+        unzip -q merged_dataset.zip && rm merged_dataset.zip
+
+        echo 'Dataset is ready in /data/merged_dataset'
+      "
+    restart: 'no'
