@@ -1,152 +1,216 @@
-# train_sft_with_ray.py
-import os
-import os, sys, subprocess, json
+# train_sft_with_lightning_ray_mlflow.py
+# Ensure all necessary installs when run as a script
+import subprocess
+import sys
 
-subprocess.run([sys.executable, '-m', 'pip', 'install', '--upgrade',
-                'bitsandbytes', 'transformers', 'accelerate',
-                'datasets', 'trl', 'peft', 'evaluate',
-                'lightning', 'torch', 'torchvision', 'mlflow','huggingface-hub'], check=True)
+subprocess.run([
+    sys.executable,
+    "-m",
+    "pip",
+    "install",
+    "--upgrade",
+    "bitsandbytes",
+    "transformers",
+    "accelerate",
+    "datasets",
+    "trl",
+    "peft",
+    "evaluate",
+    "lightning",
+    "torch",
+    "torchvision",
+    "mlflow",
+    "huggingface-hub",
+    "ray[air]",
+], check=True)
+
+# -------------------------------------------------------------
+# Imports
+# -------------------------------------------------------------
+import os
+import json
 
 from datasets import Dataset
-from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+from transformers import AutoTokenizer, AutoModelForCausalLM
 from torch.optim import AdamW
-from trl import SFTConfig
 from peft import LoraConfig, get_peft_model
 import torch
 from torch.utils.data import DataLoader
 import lightning.pytorch as pl
-from lightning.pytorch import Trainer
-from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
-import mlflow, mlflow.pytorch
-from huggingface_hub import login
+from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping, TQDMProgressBar
 
-# Ray imports
-import ray
-from ray.train import RunConfig, ScalingConfig
-from ray.train.lightning import RayTrainReportCallback, RayDDPStrategy, prepare_trainer
+import mlflow
+import mlflow.pytorch
+
+import ray.train.torch
+import ray.train.lightning
+from ray.train import ScalingConfig, RunConfig
 from ray.train.torch import TorchTrainer
-
-# ---------- ensure HF login & env setup ----------
+from ray.train.lightning import RayTrainReportCallback
 
 from huggingface_hub import login
 
+# -------------------------------------------------------------
+# Login to Hugging Face (token should have access permissions)
+# -------------------------------------------------------------
 login("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")
 
-# ---------- data loading helper ----------
-def load_dataset(path):
-    with open(path, "r", encoding="utf-8") as f:
-        data = [json.loads(l) for l in f]
-    sys_prompt = "Summarize the following legal text."
-    texts = [
-        f"### Instruction: {sys_prompt}\n\n### Input:\n{item['judgement'][:10000]}\n\n### Response:\n{item['summary']}"
-        for item in data
-    ]
-    return Dataset.from_dict({"text": texts})
+# -------------------------------------------------------------
+# Ray Train loop function
+# -------------------------------------------------------------
 
-# ---------- the Ray “train_func” ----------
-def train_func(config):
-    # only rank0 does MLflow
-    rank = int(os.environ.get("RANK",0))
-    if rank==0:
-        mlflow.set_experiment("lora_sft_ray")
-        mlflow.pytorch.autolog()
-        mlflow.start_run(log_system_metrics=True)
-    
-    # load data
-    ds_dir = os.getenv("MERGED_DATASET_DIR","merged_dataset")
-    train_ds = load_dataset(os.path.join(ds_dir,"train.jsonl"))
-    val_ds   = load_dataset(os.path.join(ds_dir,"test.jsonl"))
-    tokenizer = AutoTokenizer.from_pretrained(config["model_name"], padding_side="left")
-    tokenizer.pad_token = tokenizer.eos_token
-    
-    def collate_fn(batch):
-        toks = tokenizer([x["text"] for x in batch],
-                         return_tensors="pt", padding=True,
-                         truncation=True, max_length=4096)
-        toks["labels"] = toks.input_ids.clone()
-        return toks
+def train_func(train_loop_config):
+    """Distributed training loop executed by Ray workers."""
+    import os
+    import mlflow
+    import mlflow.pytorch
+    import ray.train as train
 
-    train_loader = DataLoader(train_ds, batch_size=config["batch_size"], shuffle=True, collate_fn=collate_fn)
-    val_loader   = DataLoader(val_ds,   batch_size=config["batch_size"], shuffle=False,collate_fn=collate_fn)
+    # ------------------ Data Preparation ------------------
+    preprocessed_data_dir = os.getenv("MERGED_DATASET_DIR", "merged_dataset")
 
-    # build model + LoRA
-    bnb = BitsAndBytesConfig(load_in_8bit=True)
-    base = AutoModelForCausalLM.from_pretrained(
-        config["model_name"],
-        quantization_config=bnb,
-        device_map="auto"
+    def load_dataset(jsonl_file):
+        with open(jsonl_file, "r", encoding="utf-8") as f:
+            data = [json.loads(line) for line in f]
+        system_prompt = "Summarize the following legal text."
+        texts = [
+            f"""### Instruction: {system_prompt}\n\n### Input:\n{item['judgement'].strip()[:10000]}\n\n### Response:\n{item['summary'].strip()}"""
+            for item in data
+        ]
+        return Dataset.from_dict({"text": texts})
+
+    train_ds = load_dataset(os.path.join(preprocessed_data_dir, "train.jsonl"))
+    test_ds = load_dataset(os.path.join(preprocessed_data_dir, "test.jsonl"))
+
+    # Tokenizer and collate function
+    tokenizer = AutoTokenizer.from_pretrained(
+        "meta-llama/Llama-2-7b-hf", padding_side="left"
     )
-    lora = LoraConfig(r=8, lora_alpha=8, lora_dropout=0.1, bias="none", task_type="CAUSAL_LM")
-    model = get_peft_model(base, lora)
+    tokenizer.pad_token = tokenizer.eos_token
 
-    # LightningModule wrapper
-    class SFTModule(pl.LightningModule):
-        def __init__(self, model, lr, wd):
+    def collate_fn(batch):
+        texts = [ex["text"] for ex in batch]
+        tok = tokenizer(
+            texts,
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+            max_length=4096,
+        )
+        tok["labels"] = tok.input_ids.clone()
+        return tok
+
+    train_loader = DataLoader(
+        train_ds, batch_size=1, shuffle=True, collate_fn=collate_fn
+    )
+    val_loader = DataLoader(
+        test_ds, batch_size=1, shuffle=False, collate_fn=collate_fn
+    )
+
+    # ------------------ Model Setup ------------------
+    base_model = AutoModelForCausalLM.from_pretrained(
+        "meta-llama/Llama-2-7b-hf",
+        torch_dtype=torch.float16,
+        low_cpu_mem_usage=True,
+    )
+
+    lora_cfg = LoraConfig(r=8, lora_alpha=8, lora_dropout=0.1, bias="none", task_type="CAUSAL_LM")
+    model = get_peft_model(base_model, lora_cfg).to(torch.device("cuda"))
+
+    # ------------------ LightningModule ------------------
+    class SFTLightningModule(pl.LightningModule):
+        def __init__(self, model, lr, weight_decay):
             super().__init__()
             self.model = model
-            self.lr, self.wd = lr, wd
+            self.lr = lr
+            self.weight_decay = weight_decay
 
-        def training_step(self, batch, bi):
-            out = self.model(**batch)
-            self.log("train_loss", out.loss, prog_bar=True)
-            return out.loss
+        def training_step(self, batch, batch_idx):
+            outputs = self.model(**batch)
+            loss = outputs.loss
+            self.log("train_loss", loss, prog_bar=True, sync_dist=True)
+            return loss
 
-        def validation_step(self, batch, bi):
-            out = self.model(**batch)
-            self.log("val_loss", out.loss, prog_bar=True)
+        def validation_step(self, batch, batch_idx):
+            outputs = self.model(**batch)
+            loss = outputs.loss
+            self.log("val_loss", loss, prog_bar=True, sync_dist=True)
 
         def configure_optimizers(self):
-            params = [p for p in self.model.parameters() if p.requires_grad]
-            return AdamW(params, lr=self.lr, weight_decay=self.wd)
+            peft_params = [p for p in self.model.parameters() if p.requires_grad]
+            return AdamW(peft_params, lr=self.lr, weight_decay=self.weight_decay)
 
-    lit_mod = SFTModule(model, lr=config["lr"], wd=config["weight_decay"])
+    lit_model = SFTLightningModule(model, lr=5e-3, weight_decay=0.001)
 
-    # Lightning Trainer with RayDDPStrategy + Ray callback
-    trainer = Trainer(
-        max_epochs=config["num_epochs"],
+    # ------------------ Callbacks ------------------
+    checkpoint_cb = ModelCheckpoint(monitor="val_loss", mode="min", save_top_k=1)
+    earlystop_cb = EarlyStopping(monitor="val_loss", patience=3, mode="min")
+    tqdm_cb = TQDMProgressBar(refresh_rate=10)
+
+    # ------------------ Trainer ------------------
+    trainer = pl.Trainer(
+        max_epochs=1,
         accelerator="gpu",
-        devices="auto",
-        strategy=RayDDPStrategy(),
+        devices=1,
+        strategy=ray.train.lightning.RayDDPStrategy(),
+        plugins=[ray.train.lightning.RayLightningEnvironment()],
+        gradient_clip_val=0.3,
         callbacks=[
-            ModelCheckpoint(monitor="val_loss", mode="min", save_top_k=1),
-            EarlyStopping(monitor="val_loss", patience=3),
-            RayTrainReportCallback()        # ← report metrics back to Ray
+            checkpoint_cb,
+            earlystop_cb,
+            RayTrainReportCallback(),
         ],
-        log_every_n_steps=50
+        log_every_n_steps=50,
     )
 
-    # prepare for Ray
-    trainer = prepare_trainer(trainer)
+    # Prepare trainer for Ray distributed execution
+    trainer = ray.train.lightning.prepare_trainer(trainer)
 
-    # fit & validate
-    trainer.fit(lit_mod, train_loader, val_loader)
+    # ------------------ MLflow Autologging ------------------
+    # Enable MLflow only on the primary (rank 0) worker to avoid duplicate logs
+    import ray.train as train
 
-    # end MLflow run on rank0
-    if rank==0:
-        mlflow.end_run()
+    if train.get_context().get_world_rank() == 0:
+        mlflow.pytorch.autolog(disable=False)
 
-# ---------- Ray Trainer entrypoint ----------
-if __name__=="__main__":
-    ray.init()  # or ray.init(address="auto") in a cluster
+    # ------------------ Training ------------------
+    trainer.fit(lit_model, train_loader, val_loader)
 
-    scaling = ScalingConfig(
-        num_workers=1,            # you can increase to number of nodes
-        use_gpu=True,
-        resources_per_worker={"GPU": 1, "CPU": 8}
-    )
-    runcfg = RunConfig(storage_path="s3://ray")
+    # ------------------ Save model & tokenizer ------------------
+    output_dir = "lightning_lora_model"
+    os.makedirs(output_dir, exist_ok=True)
 
-    torch_trainer = TorchTrainer(
-        train_func=train_func,
-        scaling_config=scaling,
-        run_config=runcfg,
-        train_loop_config={
-            "model_name":"meta-llama/Llama-2-7b-hf",
-            "batch_size":1,
-            "lr":5e-3,
-            "weight_decay":0.001,
-            "num_epochs":3
-        }
-    )
-    result = torch_trainer.fit()
-    print("Finished with result:", result.metrics)
+    model.save_pretrained(output_dir)
+    tokenizer.save_pretrained(output_dir)
+
+    # Log the saved model as an MLflow artifact (rank 0 only)
+    if train.get_context().get_world_rank() == 0:
+        mlflow.log_artifacts(output_dir, artifact_path="model")
+
+    # Return the validation loss for Ray Tune / Ray Train aggregates
+    metrics = {"val_loss": trainer.callback_metrics.get("val_loss").item()}
+    return metrics
+
+
+# -------------------------------------------------------------
+# Ray Trainer Configuration & Execution
+# -------------------------------------------------------------
+
+scaling_config = ScalingConfig(
+    num_workers=1,
+    use_gpu=True,
+    resources_per_worker={"GPU": 1, "CPU": 8},
+)
+
+run_config = RunConfig(storage_path="s3://ray")
+
+trainer = TorchTrainer(
+    train_func,
+    scaling_config=scaling_config,
+    run_config=run_config,
+    train_loop_config={},  # no additional hyperparams passed for now
+)
+
+result = trainer.fit()
+
+print("Training completed. Aggregated metrics:", result)
