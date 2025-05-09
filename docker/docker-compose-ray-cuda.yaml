@@ -1,28 +1,11 @@
-name: ray_cluster
+version: "3.9"
+
 services:
-  # MinIO object store service provides storage for checkpoints from Ray Train jobs
-  minio:
-    image: minio/minio
-    container_name: minio
-    restart: always
-    expose:
-      - "9000"
-    ports:  
-      - "9000:9000" 
-      - "9001:9001"  
-    environment:
-      MINIO_ROOT_USER: "your-access-key"
-      MINIO_ROOT_PASSWORD: "your-secret-key"
-    healthcheck:
-      test: timeout 5s bash -c ':> /dev/tcp/127.0.0.1/9000' || exit 1
-      interval: 1s
-      timeout: 10s
-      retries: 5
-    command: server /data --console-address ":9001"
-    volumes:
-      - minio_data:/data 
-  # When the minio service has started, launch a container with the minio client
-  # and use it to create a bucket named ray
+  # ────────────────────────────────────────────────────────────
+  # MinIO object‑store (checkpoints, datasets, models)
+  # ───────────────────────────────
+
+  # Creates the bucket `ray` if it does not yet exist
   minio-create-bucket:
     image: minio/mc
     depends_on:
@@ -30,60 +13,64 @@ services:
         condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      mc alias set minio http://minio:9000 your-access-key your-secret-key &&
+      mc alias set minio http://129.114.25.240:9001 your-access-key your-secret-key &&
       if ! mc ls minio/ray; then
         mc mb minio/ray &&
-        echo 'Bucket ray creatd'
+        echo 'Bucket ray created';
       else
         echo 'Bucket ray already exists';
       fi"
 
+  # ────────────────────────────────────────────────────────────
+  # Ray head‑node (Prometheus + metrics provisioning files)
+  # ────────────────────────────────────────────────────────────
   ray-head:
     image: rayproject/ray:2.42.1
     container_name: ray-head
     command: |
       /bin/sh -c "
-      mkdir -p /tmp/ray && 
+      mkdir -p /tmp/ray &&
       chown -R root:root /tmp/ray &&
       ray metrics launch-prometheus &&
-      ray start --head --port=6379 --dashboard-host=0.0.0.0 --block --metrics-export-port=8080"
+      ray start --head --port=6379 --dashboard-host=0.0.0.0 \
+                --block --metrics-export-port=8080"
     ports:
-      - "6379:6379" 
-      - "8265:8265" 
-      - "8080:8080" 
-      - "8090:8090" 
-      - "9090:9090" 
-    shm_size: '12g'
+      - "6379:6379"
+      - "8265:8265"
+      - "8080:8080"
+      - "8090:8090"
+      - "9090:9090"
+    shm_size: "12g"
     volumes:
-      - ray_tmp:/tmp/ray
+      - ray_tmp:/tmp/ray          # read‑write
     environment:
       - RAY_GRAFANA_HOST=http://grafana:3000
       - RAY_GRAFANA_IFRAME_HOST=http://${HOST_IP}:3000
       - RAY_PROMETHEUS_HOST=http://ray-head:9090
       - RAY_PROMETHEUS_NAME=Prometheus
-      - AWS_ACCESS_KEY_ID=your-access-key     # for MinIO access
+      - AWS_ACCESS_KEY_ID=your-access-key
       - AWS_SECRET_ACCESS_KEY=your-secret-key
-      - AWS_ENDPOINT_URL=http://minio:9000
+      - AWS_ENDPOINT_URL=http://129.114.25.240:9001
     user: root
 
+  # ────────────────────────────────────────────────────────────
+  # Grafana dashboard (reads Ray’s provisioning files)
+  # ────────────────────────────────────────────────────────────
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
     entrypoint: |
       /bin/sh -c "
-      # Wait for config directory
       while [ ! -f /tmp/ray/session_latest/metrics/grafana/grafana.ini ]; do
         echo 'Waiting for Grafana config files...'
         sleep 2
       done
-      
-      # Start Grafana with copied config
       /run.sh --config /tmp/ray/session_latest/metrics/grafana/grafana.ini"
     ports:
       - "3000:3000"
     volumes:
-      - grafana_storage:/var/lib/grafana
-      - ray_tmp:/tmp/ray:ro
+      - grafana_storage:/var/lib/grafana   # dashboards & DB
+      - ray_tmp:/tmp/ray:ro                # Ray metrics, read‑only
     environment:
       - GF_INSTALL_PLUGINS=grafana-piechart-panel
       - GF_PATHS_PROVISIONING=/tmp/ray/session_latest/metrics/grafana/provisioning
@@ -98,10 +85,14 @@ services:
     depends_on:
       - ray-head
 
+  # ────────────────────────────────────────────────────────────
+  # GPU workers
+  # ────────────────────────────────────────────────────────────
   ray-worker-1:
     image: rayproject/ray:2.42.1-gpu
     container_name: ray-worker-0
-    command: ["ray", "start", "--address=ray-head:6379", "--num-cpus=32", "--num-gpus=1", "--block"]
+    command: ["ray", "start", "--address=ray-head:6379",
+              "--num-cpus=32", "--num-gpus=1", "--block"]
     deploy:
       resources:
         reservations:
@@ -110,19 +101,20 @@ services:
               capabilities: ["gpu"]
               device_ids: ["0"]
     environment:
-      - AWS_ACCESS_KEY_ID=your-access-key     # for MinIO access
+      - AWS_ACCESS_KEY_ID=your-access-key
       - AWS_SECRET_ACCESS_KEY=your-secret-key
-      - AWS_ENDPOINT_URL=http://minio:9000
-    shm_size: '12g'
+      - AWS_ENDPOINT_URL=http://129.114.25.240:9001
+    shm_size: "12g"
     volumes:
-      - food11:/mnt
+      - /mnt/LLMData:/mnt:ro 
     depends_on:
       - ray-head
 
   ray-worker-2:
     image: rayproject/ray:2.42.1-gpu
     container_name: ray-worker-1
-    command: ["ray", "start", "--address=ray-head:6379", "--num-cpus=32", "--num-gpus=1", "--block"]
+    command: ["ray", "start", "--address=ray-head:6379",
+              "--num-cpus=32", "--num-gpus=1", "--block"]
     deploy:
       resources:
         reservations:
@@ -131,18 +123,19 @@ services:
               capabilities: ["gpu"]
               device_ids: ["1"]
     environment:
-      - AWS_ACCESS_KEY_ID=your-access-key     # for MinIO access
+      - AWS_ACCESS_KEY_ID=your-access-key
       - AWS_SECRET_ACCESS_KEY=your-secret-key
-      - AWS_ENDPOINT_URL=http://minio:9000
-    shm_size: '12g'
+      - AWS_ENDPOINT_URL=http://129.114.25.240:9001
+    shm_size: "12g"
     volumes:
-      - food11:/mnt
+      - /mnt/LLMData:/mnt:ro 
     depends_on:
       - ray-head
 
+# ────────────────────────────────────────────────────────────
+# Named & external volumes
+# ────────────────────────────────────────────────────────────
 volumes:
-  grafana_storage:
-  ray_tmp:
-  minio_data:
-  food11:
-    external: true  # Uses externally created volume
+  grafana_storage:           # dashboards & Grafana DB
+  ray_tmp:                   # Ray + Grafana metrics hand‑off
+  
