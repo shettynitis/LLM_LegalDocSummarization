@@ -3,7 +3,7 @@
 import subprocess
 import sys
 
-subprocess.run([
+'''subprocess.run([
     sys.executable,
     "-m",
     "pip",
@@ -22,7 +22,7 @@ subprocess.run([
     "mlflow",
     "huggingface-hub",
     "ray[air]",
-], check=True)
+], check=True)'''
 
 # -------------------------------------------------------------
 # Imports
@@ -67,7 +67,7 @@ def train_func(train_loop_config):
     import ray.train as train
 
     # ------------------ Data Preparation ------------------
-    preprocessed_data_dir = os.getenv("MERGED_DATASET_DIR", "merged_dataset")
+    preprocessed_data_dir = os.getenv("MERGED_DATA_DIR", "merged_dataset")
 
     def load_dataset(jsonl_file):
         with open(jsonl_file, "r", encoding="utf-8") as f:
