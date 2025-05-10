@@ -100,7 +100,7 @@ services:
       - AWS_ENDPOINT_URL=http://129.114.25.240:9001
     shm_size: "12g"
     volumes:
-      - /mnt/LLMData:/mnt:ro 
+      - /mnt/LLMData:/mnt/LLMData:ro 
     depends_on:
       - ray-head
 
@@ -121,7 +121,7 @@ services:
       - AWS_ENDPOINT_URL=http://129.114.25.240:9001
     shm_size: "12g"
     volumes:
-      - /mnt/LLMData:/mnt:ro 
+      - /mnt/LLMData:/mnt/LLMData:ro 
     depends_on:
       - ray-head
 
