@@ -1,0 +1,10 @@
+# docker-compose-fastapi.yaml
+version: "3.9"
+services:
+  llm_api:
+    build: ./fastapi_onnx
+    ports: ["8000:8000"]
+    shm_size: "16g"
+    environment: {NVIDIA_VISIBLE_DEVICES: all}
+    volumes:
+      - ./llama2‑legal‑onnx:/model     # mount the optimised ONNX + tokenizer
