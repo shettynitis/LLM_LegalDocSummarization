@@ -1,0 +1,3 @@
+.venv/
+user_inputs.log
+app_flask/__pycache__/
