@@ -8,8 +8,7 @@
     "AWS_REGION": "us-east-1",
 
     "AWS_ENDPOINT_URL": "http://129.114.25.240:9000",
-    "AWS_S3_ADDRESSING_STYLE": "path",
-    "HF_TOKEN": "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"
+    "AWS_S3_ADDRESSING_STYLE": "path"
   },
   "excludes": [".git"]
 }

@@ -3,6 +3,7 @@
 import subprocess
 import sys
 
+
 '''subprocess.run([
     sys.executable,
     "-m",
@@ -29,6 +30,9 @@ import sys
 # -------------------------------------------------------------
 import os
 import json
+from transformers import BitsAndBytesConfig
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:128"
+
 
 from datasets import Dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM
@@ -46,18 +50,25 @@ import ray.train.torch
 import ray.train.lightning
 from ray.train import ScalingConfig, RunConfig
 from ray.train.torch import TorchTrainer
+from lightning.pytorch.strategies import FSDPStrategy
+from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
+from transformers.models.llama.modeling_llama import LlamaDecoderLayer
 from ray.train.lightning import RayTrainReportCallback
+from ray.train.lightning import RayDDPStrategy, RayLightningEnvironment
 
-from huggingface_hub import login
+#from huggingface_hub import login
 
 # -------------------------------------------------------------
 # Login to Hugging Face (token should have access permissions)
 # -------------------------------------------------------------
-login("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")
+#login("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")
 
 # -------------------------------------------------------------
 # Ray Train loop function
 # -------------------------------------------------------------
+mlflow.set_tracking_uri("http://129.114.25.240:8000/") 
+mlflow.set_experiment("LLama-ray")
+
 
 def train_func(train_loop_config):
     """Distributed training loop executed by Ray workers."""
@@ -65,9 +76,14 @@ def train_func(train_loop_config):
     import mlflow
     import mlflow.pytorch
     import ray.train as train
+    import os
+    #from huggingface_hub import login
+
+    #login(os.getenv("HUGGINGFACE_HUB_TOKEN"))
+    HF_TOKEN = os.environ["HF_TOKEN"] 
 
     # ------------------ Data Preparation ------------------
-    preprocessed_data_dir = os.getenv("MERGED_DATA_DIR", "merged_dataset")
+    preprocessed_data_dir = "/mnt/LLMData" #os.getenv("MERGED_DATA_DIR")
 
     def load_dataset(jsonl_file):
         with open(jsonl_file, "r", encoding="utf-8") as f:
@@ -87,15 +103,16 @@ def train_func(train_loop_config):
         "meta-llama/Llama-2-7b-hf", padding_side="left"
     )
     tokenizer.pad_token = tokenizer.eos_token
+    MAX_LEN = 1012
 
     def collate_fn(batch):
         texts = [ex["text"] for ex in batch]
         tok = tokenizer(
             texts,
             return_tensors="pt",
-            padding=True,
+            padding="max_length",
             truncation=True,
-            max_length=4096,
+            max_length=MAX_LEN,
         )
         tok["labels"] = tok.input_ids.clone()
         return tok
@@ -108,14 +125,22 @@ def train_func(train_loop_config):
     )
 
     # ------------------ Model Setup ------------------
-    base_model = AutoModelForCausalLM.from_pretrained(
-        "meta-llama/Llama-2-7b-hf",
-        torch_dtype=torch.float16,
+    '''base_model = AutoModelForCausalLM.from_pretrained(
+        "meta-llama/Llama-2-7b-hf", 
+         torch_dtype=torch.bfloat16, 
         low_cpu_mem_usage=True,
-    )
+    )'''
+    base_model = AutoModelForCausalLM.from_pretrained(
+     "meta-llama/Llama-2-7b-hf",
+      torch_dtype=torch.float16,
+     low_cpu_mem_usage=True,
+      )
 
-    lora_cfg = LoraConfig(r=8, lora_alpha=8, lora_dropout=0.1, bias="none", task_type="CAUSAL_LM")
-    model = get_peft_model(base_model, lora_cfg).to(torch.device("cuda"))
+    base_model.gradient_checkpointing_enable()  # ← drop activations
+
+    lora_cfg = LoraConfig(r=8, lora_alpha=8, lora_dropout=0.1,
+                      bias="none", task_type="CAUSAL_LM")
+    model = get_peft_model(base_model, lora_cfg).to("cuda")
 
     # ------------------ LightningModule ------------------
     class SFTLightningModule(pl.LightningModule):
@@ -139,6 +164,10 @@ def train_func(train_loop_config):
         def configure_optimizers(self):
             peft_params = [p for p in self.model.parameters() if p.requires_grad]
             return AdamW(peft_params, lr=self.lr, weight_decay=self.weight_decay)
+        
+        
+    #precision fp16
+    
 
     lit_model = SFTLightningModule(model, lr=5e-3, weight_decay=0.001)
 
@@ -148,7 +177,7 @@ def train_func(train_loop_config):
     tqdm_cb = TQDMProgressBar(refresh_rate=10)
 
     # ------------------ Trainer ------------------
-    trainer = pl.Trainer(
+    '''trainer = pl.Trainer(
         max_epochs=1,
         accelerator="gpu",
         devices=1,
@@ -161,7 +190,38 @@ def train_func(train_loop_config):
             RayTrainReportCallback(),
         ],
         log_every_n_steps=50,
-    )
+    )'''
+    from functools import partial
+    from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
+    from transformers.models.llama.modeling_llama import LlamaDecoderLayer
+    from ray.train.lightning import (
+    RayLightningEnvironment,
+    RayFSDPStrategy,          # ← Ray’s wrapper
+)
+    
+
+    wrap_policy = partial(
+    transformer_auto_wrap_policy,
+    transformer_layer_cls={LlamaDecoderLayer},
+    # keyword arg!
+)
+
+    # 2. build the Trainer
+    
+    trainer = pl.Trainer(
+      max_epochs=3,
+      accelerator="gpu",
+      devices=1,                      # one GPU per Ray worker
+      strategy=RayDDPStrategy(),      # ← switch to DDP
+      plugins=[RayLightningEnvironment()],
+      accumulate_grad_batches=4,
+      gradient_clip_val=0.3,
+      callbacks=[checkpoint_cb, earlystop_cb, RayTrainReportCallback()],
+      log_every_n_steps=50,
+ )
+
+    
+
 
     # Prepare trainer for Ray distributed execution
     trainer = ray.train.lightning.prepare_trainer(trainer)
@@ -170,22 +230,25 @@ def train_func(train_loop_config):
     # Enable MLflow only on the primary (rank 0) worker to avoid duplicate logs
     import ray.train as train
 
-    if train.get_context().get_world_rank() == 0:
-        mlflow.pytorch.autolog(disable=False)
+    try: 
+        mlflow.end_run() # end pre-existing run, if there was one
+    except:
+        pass
+    finally:
+        mlflow.start_run(log_system_metrics=True) # Start MLFlow run
 
     # ------------------ Training ------------------
     trainer.fit(lit_model, train_loader, val_loader)
 
     # ------------------ Save model & tokenizer ------------------
-    output_dir = "lightning_lora_model"
+    '''output_dir = "/mnt/LLMData/lightning_lora_model"
     os.makedirs(output_dir, exist_ok=True)
 
     model.save_pretrained(output_dir)
-    tokenizer.save_pretrained(output_dir)
+    tokenizer.save_pretrained(output_dir)'''
 
     # Log the saved model as an MLflow artifact (rank 0 only)
-    if train.get_context().get_world_rank() == 0:
-        mlflow.log_artifacts(output_dir, artifact_path="model")
+    
 
     # Return the validation loss for Ray Tune / Ray Train aggregates
     metrics = {"val_loss": trainer.callback_metrics.get("val_loss").item()}
@@ -197,9 +260,9 @@ def train_func(train_loop_config):
 # -------------------------------------------------------------
 
 scaling_config = ScalingConfig(
-    num_workers=1,
+    num_workers=2,
     use_gpu=True,
-    resources_per_worker={"GPU": 1, "CPU": 8},
+    resources_per_worker={"GPU": 1,"CPU":8},
 )
 
 run_config = RunConfig(storage_path="s3://ray")
@@ -210,7 +273,17 @@ trainer = TorchTrainer(
     run_config=run_config,
     train_loop_config={},  # no additional hyperparams passed for now
 )
+# Log metrics - the things we *measure* - to MLFlow
+   
 
 result = trainer.fit()
 
 print("Training completed. Aggregated metrics:", result)
+mlflow.pytorch.log_model(lit_model.model, "ray_llama")
+
+mlflow.log_metrics(
+    {"test_loss": metrics['val_loss']
+    })
+
+mlflow.end_run()
+
