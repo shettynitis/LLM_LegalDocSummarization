@@ -8,13 +8,14 @@ class InferenceRequest(BaseModel):
     prompt: str
     max_new_tokens: int = 100
 
+
 app = FastAPI(title="LLM ONNX Inference")
 
 # Load tokenizer and ONNX session once at startup
-tok = AutoTokenizer.from_pretrained("../model/")  # adjust path if needed
+tok = AutoTokenizer.from_pretrained("model")  # adjust path if needed
 # For GPU inference, make sure onnxruntime-gpu is installed and NVIDIA drivers available
 ort_session = ort.InferenceSession(
-    "../model/model.onnx",
+    "model/model.onnx",
     providers=["CUDAExecutionProvider", "CPUExecutionProvider"],
 )
 
