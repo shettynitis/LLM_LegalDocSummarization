@@ -1,0 +1,52 @@
+:root {
+  --violet-light: #f3e8ff;
+  --violet:       #8c4bff;
+  --violet-dark:  #5a1fd1;
+}
+
+/* Container background */
+.violet-bg-light {
+  background-color: var(--violet-light);
+}
+
+/* Text colors */
+.violet {
+  color: var(--violet);
+}
+.violet-dark {
+  color: var(--violet-dark) !important;
+}
+.violet-text {
+  color: var(--violet-dark);
+}
+
+/* Buttons */
+.btn-violet {
+  background-color: var(--violet);
+  border-color: var(--violet);
+  color: white;
+}
+.btn-violet:hover {
+  background-color: var(--violet-dark);
+  border-color: var(--violet-dark);
+}
+
+.btn-outline-violet {
+  color: var(--violet);
+  border-color: var(--violet);
+}
+.btn-outline-violet:hover {
+  background-color: var(--violet-light);
+  color: var(--violet-dark);
+}
+
+/* Input */
+.violet-input {
+  border: 2px solid var(--violet);
+  box-shadow: 0 0 0 0.2rem rgba(140, 75, 255, 0.25);
+}
+
+/* Card border */
+.border-violet {
+  border: 2px solid var(--violet);
+}
