@@ -19,4 +19,4 @@ This folder includes code that builds a Retrieval-Augmented Generation (RAG) sys
 
 Each step is designed for modularity and reproducibility, enabling you to swap datasets, tweak chunk sizes, or plug in different embedding/generation models.
 
-The resultant index file is saved in the model_rag folder.
+The resultant index file is saved in the model_rag folder. We then copy the model_rag folder into out block volume `cp -r LLM_LegalDocSummarization/2_vector_db/model_rag /mnt/block`.
