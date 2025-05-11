@@ -50,3 +50,21 @@
 .border-violet {
   border: 2px solid var(--violet);
 }
+
+/* Make the summary box taller and scrollable */
+#summaryBox {
+  max-height: 400px;      /* height before scroll appears—tweak as needed */
+  overflow-y: auto;       /* vertical scrollbar only */
+  white-space: pre-wrap;  /* wrap long lines */
+  word-break: break-word; /* prevent overflow on very long words */
+}
+
+/* Optional: customize the scrollbar (WebKit browsers) */
+#summaryBox::-webkit-scrollbar {
+  width: 8px;
+}
+
+#summaryBox::-webkit-scrollbar-thumb {
+  background-color: var(--violet);
+  border-radius: 4px;
+}
