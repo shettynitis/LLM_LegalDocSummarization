@@ -18,3 +18,6 @@ COPY scripts /app/llm_tests
 
 # default entry: run tests, then register if green
 CMD ["python", "-m", "llm_tests.register_if_green"]
+
+
+
