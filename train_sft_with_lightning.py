@@ -55,6 +55,9 @@ from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
 from transformers.models.llama.modeling_llama import LlamaDecoderLayer
 from ray.train.lightning import RayTrainReportCallback
 from ray.train.lightning import RayDDPStrategy, RayLightningEnvironment
+from ray.train import FailureConfig, CheckpointConfig, RunConfig
+from lightning.pytorch.callbacks import ModelCheckpoint
+
 
 #from huggingface_hub import login
 
@@ -95,8 +98,15 @@ def train_func(train_loop_config):
         ]
         return Dataset.from_dict({"text": texts})
 
-    train_ds = load_dataset(os.path.join(preprocessed_data_dir, "train.jsonl"))
-    test_ds = load_dataset(os.path.join(preprocessed_data_dir, "test.jsonl"))
+    #train_ds = load_dataset(os.path.join(preprocessed_data_dir, "train.jsonl"))
+    #test_ds = load_dataset(os.path.join(preprocessed_data_dir, "test.jsonl"))
+
+    full_ds = load_dataset(os.path.join(preprocessed_data_dir, "train.jsonl"))
+
+# …and split it into train/val (e.g. 90/10)
+    splits = full_ds.train_test_split(test_size=0.1, seed=42)
+    train_ds = splits["train"]
+    test_ds   = splits["test"]
 
     # Tokenizer and collate function
     tokenizer = AutoTokenizer.from_pretrained(
@@ -248,10 +258,17 @@ def train_func(train_loop_config):
     tokenizer.save_pretrained(output_dir)'''
 
     # Log the saved model as an MLflow artifact (rank 0 only)
+    import ray.train as train
+    if train.get_context().get_world_rank() == 0:
+        # log model
+        mlflow.pytorch.log_model(lit_model.model, artifact_path="ray_llama")
+        # log metrics
+        
     
 
     # Return the validation loss for Ray Tune / Ray Train aggregates
     metrics = {"val_loss": trainer.callback_metrics.get("val_loss").item()}
+    mlflow.log_metric("val_loss", metrics['val_loss'])
     return metrics
 
 
@@ -265,7 +282,7 @@ scaling_config = ScalingConfig(
     resources_per_worker={"GPU": 1,"CPU":8},
 )
 
-run_config = RunConfig(storage_path="s3://ray")
+run_config = RunConfig(storage_path="s3://ray",failure_config=FailureConfig(max_failures=-1),)
 
 trainer = TorchTrainer(
     train_func,
@@ -279,11 +296,7 @@ trainer = TorchTrainer(
 result = trainer.fit()
 
 print("Training completed. Aggregated metrics:", result)
-mlflow.pytorch.log_model(lit_model.model, "ray_llama")
 
-mlflow.log_metrics(
-    {"test_loss": metrics['val_loss']
-    })
+
 
 mlflow.end_run()
-
