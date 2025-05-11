@@ -2,4 +2,4 @@ fastapi
 uvicorn[standard]
 transformers
 numpy
-onnxruntime-gpu 
+onnxruntime 
