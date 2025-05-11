@@ -55,7 +55,7 @@ def _retrieve(query: str, top_k: int = 5):
     return results
 
 
-def summarize_text(user_text: str) -> str:
+def summarize_text(user_text: str, max_new_tokens: int = 100) -> str:
     """
     1) Retrieve top‐k chunks for user_text
     2) Build a combined prompt
@@ -77,12 +77,26 @@ def summarize_text(user_text: str) -> str:
     # 3) Call real API or mock
     if API_URL:
         try:
-            resp = requests.post(API_URL, json={"text": full_prompt})
+            resp = requests.post(
+                API_URL,
+                json={
+                    "prompt": full_prompt,
+                    "max_new_tokens": max_new_tokens
+                }
+            )
             resp.raise_for_status()
-            return resp.json().get("summary", "")
+            data = resp.json()
+            # adjust the key below to match your API's response field
+            return data.get("summary", data.get("generated_text", ""))
         except Exception as e:
             print(f"[summarize_text] API call failed: {e}")
 
     # —————————————————— MOCK ——————————————————
     flat = full_prompt.replace("\n", " ")
     return f"📄 MOCK SUMMARY (first 100 chars): {flat[:100]}"
+
+
+if __name__ == "__main__":
+    # simple manual test
+    text = "Summarize clause 7.2"
+    print(summarize_text(text, max_new_tokens=10))
