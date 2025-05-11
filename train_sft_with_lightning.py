@@ -282,7 +282,7 @@ scaling_config = ScalingConfig(
     resources_per_worker={"GPU": 1,"CPU":8},
 )
 
-run_config = RunConfig(storage_path="s3://ray",failure_config=FailureConfig(max_failures=-1),)
+run_config = RunConfig(storage_path="s3://ray",failure_config=FailureConfig(max_failures=-1))
 
 trainer = TorchTrainer(
     train_func,
