@@ -4,7 +4,7 @@ services:
   llm-api:                              # FASTAPI + ONNX runtime
     build:
       context: .                        # project root is build context
-      dockerfile: Dockerfile           # exact file name/path
+      dockerfile: Dockerfile.fastapi           # exact file name/path
     container_name: llm-api
     environment:
       # Where your model is stored in MLflow (edit to your run or alias)

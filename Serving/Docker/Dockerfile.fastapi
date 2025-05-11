@@ -15,19 +15,19 @@ RUN apt-get update && \
     apt-get install -y python3-pip && \
     rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+WORKDIR app/
 
 # COPY llama2-legal-onnx/ /app/model
 # COPY model/model.onnx /app/model
 # Copy inference code and model into the image
-COPY app/requirements.txt .
+COPY fastapi_onnx/app/requirements.txt .
 RUN pip3 install --no-cache-dir -r requirements.txt
 
 ENV MLFLOW_TRACKING_URI=""
 ENV MODEL_URI=""
 
 # Copy your FastAPI app
-COPY app/main.py .
+COPY fastapi_onnx/app/main.py .
 
 # Expose port and launch Uvicorn
 EXPOSE 8000
