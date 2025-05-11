@@ -1,7 +1,7 @@
-# app_flask/docker-compose.yaml
 services:
   summarizer:
     build:
+      context: .
       dockerfile: Dockerfile
     container_name: llm-summarizer
     ports:
