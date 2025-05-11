@@ -26,8 +26,7 @@ This repository contains the code and configuration for the LLM Legal Document S
 
 ## 3. Architecture Diagram
 
-![Infrastructure Diagram](docs/architecture.png)
-
+![Untitled-2025-05-11-1923](https://github.com/user-attachments/assets/1c2e2095-0107-4f7b-ab7e-435c30a7360b)
 
 ## 4. Infrastructure & IaC
 
