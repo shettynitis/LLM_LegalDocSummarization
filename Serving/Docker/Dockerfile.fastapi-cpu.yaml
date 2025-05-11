@@ -1,0 +1,26 @@
+# Use a lightweight Python base image
+FROM python:3.10-slim
+
+# Set working directory
+WORKDIR /app
+
+# System dependencies (optional: curl, etc. if needed)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install Python dependencies
+COPY fastapi_onnx/app/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install mlflow
+
+# Environment variables (override these at runtime as needed)
+ENV MLFLOW_TRACKING_URI=""
+ENV MODEL_URI=""
+
+# Copy app code
+COPY fastapi_onnx/app/main.py .
+
+# Expose port and run
+EXPOSE 7000
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7000"]
