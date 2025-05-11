@@ -1,0 +1,37 @@
+# Runs on every push and pull_request to test and build your Docker image
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Check out your code
+      - uses: actions/checkout@v3
+
+      # 2. Set up Python
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      # 3. Install dependencies & run tests
+      - name: Install & test
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r app_flask/requirements.txt
+          pytest --maxfail=1 --disable-warnings -q
+
+      # 4. Build & push Docker image
+      - name: Build and push image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: app_flask/Dockerfile
+          push: true
+          tags: ${{ secrets.REGISTRY_URL }}/llm-summarizer:${{ github.sha }}

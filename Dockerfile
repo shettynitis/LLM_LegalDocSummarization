@@ -14,11 +14,11 @@ COPY . .
 # Environment variables
 ENV FLASK_APP=run.py
 ENV FLASK_RUN_HOST=0.0.0.0
-ENV FLASK_RUN_PORT=8000
+ENV FLASK_RUN_PORT=5000
 ENV FLASK_ENV=production
 
 # Expose the port—match FLASK_RUN_PORT
-EXPOSE 8000
+EXPOSE 5000
 
 # Launch the app
 CMD ["flask", "run"]

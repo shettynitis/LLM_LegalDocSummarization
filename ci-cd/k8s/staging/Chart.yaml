@@ -1,0 +1,4 @@
+apiVersion: v2
+name: llm-summarizer-staging
+version: 1.0.0
+description: LLM Summarizer Staging Deployment
