@@ -8,7 +8,7 @@ FastAPI + ONNX Runtime GPU inference
 import os
 import time
 from pathlib import Path
-from typing import List
+from typing import Optional,List
 
 import mlflow
 import numpy as np
@@ -16,7 +16,9 @@ import onnxruntime as ort
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from transformers import AutoTokenizer
+from huggingface_hub import login
 
+login("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")
 # ─────────── Sampling defaults ────────────
 TEMPERATURE    = float(os.getenv("TEMPERATURE", 0.8))
 TOP_K          = int(os.getenv("TOP_K", 40))
@@ -33,9 +35,11 @@ class InferenceRequest(BaseModel):
 app = FastAPI(title="LLM ONNX Inference (via MLflow)")
 
 # global handles filled on startup
-tokenizer: AutoTokenizer | None = None
-ort_session: ort.InferenceSession | None = None
+#tokenizer: AutoTokenizer | None = None
+#ort_session: ort.InferenceSession | None = None
 
+tokenizer: Optional[AutoTokenizer] = None
+ort_session: Optional[ort.InferenceSession] = None
 
 # ────────────────────────────────
 # Utilities
