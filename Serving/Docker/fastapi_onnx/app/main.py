@@ -83,7 +83,7 @@ def load_from_mlflow() -> None:      # runs once per container
 
     ort_session = ort.InferenceSession(
         onnx_path.as_posix(),
-        providers=["CUDAExecutionProvider", "CPUExecutionProvider"],  # :contentReference[oaicite:1]{index=1}
+        providers=["CPUExecutionProvider"]#"CUDAExecutionProvider", "CPUExecutionProvider"],  # :contentReference[oaicite:1]{index=1}
     )
     print("ONNX providers →", ort_session.get_providers())
 
@@ -116,7 +116,7 @@ def generate(req: InferenceRequest):
                     "position_ids":   position_ids,
                 },
             )[0]
-            times.append(time.time() - t0)
+            #times.append(time.time() - t0)
 
             # repetition penalty
             logits[0, -1, np.unique(generated)] /= REPETITION_PEN
@@ -130,15 +130,15 @@ def generate(req: InferenceRequest):
             attention_mask    = np.concatenate([attention_mask, np.ones_like(next_token)], axis=1)
 
         text = tokenizer.decode(generated[0], skip_special_tokens=True)
-        throughput = len(times) / max(sum(times), 1e-6)
+       # throughput = len(times) / max(sum(times), 1e-6)
 
         return {
-            "generated_text": text,
-            "perf": {
-                "new_tokens": len(times),
-                "mean_ms":    round(float(np.mean(times) * 1000), 2),
-                "throughput": round(float(throughput), 2)
-            }
+            "generated_text": text#,
+        #    "perf": {
+         #       "new_tokens": len(times),
+          #      "mean_ms":    round(float(np.mean(times) * 1000), 2),
+           #     "throughput": round(float(throughput), 2)
+           # }
         }
 
     except Exception as e:
