@@ -93,7 +93,7 @@ def train_loop(_config):
     model = SFTModule()
 
     # callbacks: save best by val_loss + report to Ray Tune
-    ckpt_cb = ModelCheckpoint(monitor="val_loss", mode="min", save_top_k=1)
+    ckpt_cb = ModelCheckpoint(monitor="val_loss", mode="min", save_top_k=1,save_last=True, dirpath="checkpoints",filename="last")
     es_cb   = EarlyStopping(monitor="val_loss", patience=3, mode="min")
     tqdm_cb = TQDMProgressBar(refresh_rate=10)
 
@@ -111,7 +111,26 @@ def train_loop(_config):
     )
     trainer = ray.train.lightning.prepare_trainer(trainer)
 
-    trainer.fit(model, train_dl, val_dl)
+    checkpoint = train.get_checkpoint()
+    if checkpoint:
+        # Ray hands us a little directory with “last.ckpt” in it
+        with checkpoint.as_directory() as ckpt_dir:
+            ckpt_path = os.path.join(ckpt_dir, "last.ckpt")
+        trainer.fit(
+            model,
+            train_dataloaders=train_dl,
+            val_dataloaders=val_dl,
+            ckpt_path=ckpt_path,
+        )
+    else:
+        trainer.fit(
+            model,
+            train_dataloaders=train_dl,
+            val_dataloaders=val_dl,
+        )
+
+
+    
     # at this point MLFlowLogger has already logged metrics & checkpoint
     # we can also log the final model one more time:
     #mlflow.pytorch.log_model(model, artifact_path="final_model")
