@@ -206,13 +206,7 @@ Steps handled in [`data_preprocessing.py`](https://github.com/shettynitis/LLM_Le
   - On worker restarts, Ray will supply the last checkpoint directory and Lightning will resume from `checkpoints/last.ckpt`.  
 
 - **Logging:**  
-  - Metrics (train/val loss, steps, epochs) and checkpoint paths are automatically logged to MLflow via the `MLFlowLogger`.  
-  - At the end of training we extract just the LoRA adapter weights with:  
-    ```python
-    adapter_state = model.model.get_adapter_state_dict()
-    torch.save(adapter_state, "adapter_weights.pt")
-    mlflow.log_artifact("adapter_weights.pt", artifact_path="ray_llama")
-    ```  
+  - Metrics (train/val loss, epochs) and checkpoint paths are automatically logged to MLflow via the `MLFlowLogger`.  
  
 
 ### 8.3 Experiment Tracking
@@ -221,8 +215,8 @@ Steps handled in [`data_preprocessing.py`](https://github.com/shettynitis/LLM_Le
 
 ### 8.4 Retrain Code
 
-- Retrain Yaml: [`infrastructure/ansible/train_cron.yml`](infrastructure/ansible/train_cron.yml)
-- Retrain-code:
+- Retrain Yaml: [`train.yml`](ci-cd/workflows/train-model.yaml)
+- Retrain-code: [`train.py`](ci-cd/flow.py)
 
 ---
 
