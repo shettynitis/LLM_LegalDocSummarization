@@ -245,10 +245,11 @@ Steps handled in [`data_preprocessing.py`](https://github.com/shettynitis/LLM_Le
 
 ## 9. Model Serving & Evaluation
 
-### 9.1 API Endpoint
-
-- FastAPI app: [`Code where we are creating the Fast API`](https://github.com/shettynitis/LLM_LegalDocSummarization/blob/main/Serving/fastapi_onnx/app/main.py)
-- Dockerfile: [`Dockerfile`](https://github.com/shettynitis/LLM_LegalDocSummarization/blob/main/Serving/fastapi_onnx/Dockerfile)
+### 9.1 Serving and API Endpoint
+- Merged the trained LoRA adapters into the Llama-2-7b base and exported the combined model as an FP16 ONNX file.
+- Ran ONNX Runtime on CPU, CUDA, and TensorRT providers, then selected the fastest execution path. [`Code to this`](https://github.com/shettynitis/LLM_LegalDocSummarization/blob/main/Serving/2_Inference.ipynb)
+- Registered the resulting model in MLflow as a checkpoint, which the FastAPI endpoint then pulls for inference. [`Code where we are creating the Fast API`](https://github.com/shettynitis/LLM_LegalDocSummarization/blob/main/Serving/Docker/fastapi_onnx/app/main.py)
+- Dockerfile: [`Dockerfile`](https://github.com/shettynitis/LLM_LegalDocSummarization/blob/main/Serving/Docker/Dockerfile.fastapi)
 - Input: User Prompt appended with RAG output
 - Output: summary text
 
