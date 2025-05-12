@@ -198,9 +198,9 @@ Steps handled in [`data_preprocessing.py`](https://github.com/shettynitis/LLM_Le
 ### 8.1 Modeling
 
 - **Inputs:** Top-K chunks + prompt template
-- **Target:** Expert summary
-- **Model:** Llama-2-7B fine-tuned with LoRA
-- **Training Code:** [`src/model/train.py`](src/model/train.py)
+- **Target:** Summary
+- **Model:** Llama-2-7B fine-tuned with LoRA using Ray Train with Fault Tolerance
+- **Training Code:** [`Ray-Train/sft_train_llama.py.py`](Ray-Train/sft_train_llama.py.py)
 
 ### 8.2 Experiment Tracking
 
