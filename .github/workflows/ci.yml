@@ -26,7 +26,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest
           pip install -r app_flask/requirements.txt
-          pytest --maxfail=1 --disable-warnings -q
+          pytest app_flask/test/test.py --maxfail=1 --disable-warnings -q
 
       # 4. Build & push Docker image
       - name: Build and push image
