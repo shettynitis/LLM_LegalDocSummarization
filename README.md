@@ -19,7 +19,7 @@ This repository contains the code and configuration for the LLM Legal Document S
 ## 2. Scale
 
 - **Offline Data:** 10 GB raw documents (~20 K files)
-- **Model Size:** Fine-tuned Llama-2-7B; training takes ~6 hrs on 2×A100 GPUs
+- **Model Size:** Fine-tuned Llama-2-7B; training takes uses 2×A100 GPUs
 - **Deployment Throughput:** ~500 inference requests/day (~1 req/min)
 
 ---
@@ -133,7 +133,7 @@ Steps handled in [`data_preprocessing.py`](https://github.com/shettynitis/LLM_Le
 5. **Filtering:** Retain samples with 50–1500 summary words and acceptable doc:summary ratios.
 6. **Split:** 70% train, 20% test, 10% production — written to `*.jsonl`.
 
-### 🧭 Data Pipeline Overview
+### Data Pipeline Overview
 
 ```
          ┌──────────────────────────────┐
