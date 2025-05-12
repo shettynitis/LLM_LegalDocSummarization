@@ -17,6 +17,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from transformers import AutoTokenizer
 from huggingface_hub import login
+from prometheus_fastapi_instrumentator import Instrumentator
 
 login("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")
 # ─────────── Sampling defaults ────────────
@@ -143,3 +144,5 @@ def generate(req: InferenceRequest):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+Instrumentator().instrument(app).expose(app)
