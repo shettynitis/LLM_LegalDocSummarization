@@ -1,0 +1,39 @@
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-summarizer-app
+  namespace: llm-summarizer-production
+
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: llm-summarizer-app
+  template:
+    metadata:
+      labels:
+        app: llm-summarizer-app
+    spec:
+      containers:
+        - name: llm-summarizer-app
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          ports:
+            - containerPort: 5000
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: llm-summarizer-app
+  namespace: llm-summarizer-production
+spec:
+  selector:
+    app: llm-summarizer-app
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: 5000
+  externalIPs:
+    - {{ .Values.service.externalIP }}
