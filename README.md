@@ -255,8 +255,8 @@ Steps handled in [`data_preprocessing.py`](https://github.com/shettynitis/LLM_Le
 
 ### 9.2 Offline Evaluation
 
-- PyTest suite: [`tests/test_offline_eval.py`](tests/test_offline_eval.py)
-- ROUGE scores logged to MLflow
+- Ran the PyTest script (tests/test_offline_eval.py) to validate end-to-end preprocessing, inference, and summary format on sample inputs.[`tests/test_offline_eval.py`](https://github.com/shettynitis/LLM_LegalDocSummarization/blob/main/Monitoring_and_Evaluation/1_Setup_ModelEvalAndMonitoring.ipynb)
+- Executed the finalized model on the held-out test set to compute ROUGE metrics, then log all scores to MLflow against the checkpoint registered in Section 9.1.
 
 ### 9.3 Load Testing
 
