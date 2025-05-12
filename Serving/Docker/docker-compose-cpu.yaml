@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  llm-api:                              # FASTAPI + ONNX runtime
+    build:
+      context: .                        # project root is build context
+      dockerfile: Dockerfile.fastapi-cpu           # exact file name/path
+    container_name: llm-api
+    environment:
+      # Where your model is stored in MLflow (edit to your run or alias)
+      MODEL_URI: "runs:/d83c3a778ab94075962dd67f724af964/onnx_model"
+      # Where the tracking / registry server lives
+      MLFLOW_TRACKING_URI: "http://129.114.25.240:8000"
+      # Optional: S3/MinIO creds if artifacts are remote
+      AWS_ACCESS_KEY_ID:   "your-access-key"
+      AWS_SECRET_ACCESS_KEY: "your-secret-key"
+      MLFLOW_S3_ENDPOINT_URL: "http://129.114.25.240:9000"
+      MLFLOW_ENABLE_ARTIFACTS_SERVER: "false"
+    ports:
+      - "7000:7000"                     # host → container
+    restart: unless-stopped
+
