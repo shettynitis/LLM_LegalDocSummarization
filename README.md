@@ -193,9 +193,9 @@ Steps handled in [`data_preprocessing.py`](https://github.com/shettynitis/LLM_Le
 ## 8. Model Training
 
 ### 8.1 Provisioning our resources and Jupyter container
-- We spin up our Ray head and worker nodes (each with 1×A100 GPU) using a small Jupyter notebook: [`Ray-Train/start_ray`](Ray-Train/submit_ray.py)
+- We spin up our Ray head and worker nodes (each with 1×A100 GPU) using a small Jupyter notebook: [`Ray-Train/start_ray`](Ray-Train/start_ray.ipynb)
 
-- We use the following notebook to submit our Ray job: 
+- We use the following notebook to submit our Ray job: [`Ray-Train/submit_ray`](Ray-Train/submit_ray.ipynb)
 
 ### 8.2 Fine-tuning with LoRA + Ray Train + Lightning + MLflow
 
