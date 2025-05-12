@@ -26,13 +26,4 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest
           pip install -r app_flask/requirements.txt
-          pytest --maxfail=1 --disable-warnings -q
-
-      # 4. Build & push Docker image
-      - name: Build and push image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          file: app_flask/Dockerfile
-          push: true
-          tags: ${{ secrets.REGISTRY_URL }}/llm-summarizer:${{ github.sha }}
+          pytest app_flask/test/test.py --maxfail=1 --disable-warnings -q
