@@ -12,7 +12,7 @@ propose a system for a science problem, for example.)
 
 ### Value Proposition
 
-Law firms and legal departments invest significant time and cost into manually reading, annotating, and summarizing lengthy legal documents—judgments, case files, contracts. Our system addresses this gap by fine-tuning Llama-2-7b with a Retrieval-Augmented Generation (RAG) pipeline to:
+Law firms and legal departments invest significant time and cost into manually reading, annotating, and summarizing lengthy legal documents—judgments, case files, contracts . Our system addresses this gap by fine-tuning Llama-2-7b with a Retrieval-Augmented Generation (RAG) pipeline to:
 
 1. Identify relevant documents from a repository
 2. Automatically generate accurate, concise summaries
