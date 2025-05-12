@@ -195,12 +195,23 @@ Steps handled in [`data_preprocessing.py`](https://github.com/shettynitis/LLM_Le
 
 ## 8. Model Training
 
-### 8.1 Modeling
+### 8.1 Fine-tuning with LoRA + Ray Train + Lightning + MLflow
 
-- **Inputs:** Top-K chunks + prompt template
-- **Target:** Summary
-- **Model:** Llama-2-7B fine-tuned with LoRA using Ray Train with Fault Tolerance
-- **Training Code:** [`Ray-Train/sft_train_llama.py`](Ray-Train/sft_train_llama.py)
+- **Training script:** `ray_training/train_sft_with_lightning_ray_mlflow.py`  
+- **Frameworks:** PyTorch Lightning, Ray Train (DDP + fault‐tolerance), PEFT (LoRA), MLflow for experiment tracking  
+- **Checkpointing:**  
+  - We save both the best `val_loss` and the last epoch into `./checkpoints/` via Lightning’s `ModelCheckpoint(save_top_k=1, save_last=True)` callback.  
+  - On worker restarts, Ray will supply the last checkpoint directory and Lightning will resume from `checkpoints/last.ckpt`.  
+
+- **Logging:**  
+  - Metrics (train/val loss, steps, epochs) and checkpoint paths are automatically logged to MLflow via the `MLFlowLogger`.  
+  - At the end of training we extract just the LoRA adapter weights with:  
+    ```python
+    adapter_state = model.model.get_adapter_state_dict()
+    torch.save(adapter_state, "adapter_weights.pt")
+    mlflow.log_artifact("adapter_weights.pt", artifact_path="ray_llama")
+    ```  
+  - You can browse runs at:  
 
 ### 8.2 Experiment Tracking
 
