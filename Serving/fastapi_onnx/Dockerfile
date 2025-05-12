@@ -1,0 +1,31 @@
+# Use NVIDIA CUDA image if you need GPU access; else use python slim
+#FROM nvidia/cuda:12.4.0-runtime-ubuntu20.04
+FROM nvidia/cuda:12.4.0-cudnn8-runtime-ubuntu20.04
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      libcublas-12-4 \
+      libcublas-dev \
+      libcudnn8 \
+      libcudnn8-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Python and dependencies
+RUN apt-get update && \
+    apt-get install -y python3-pip && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY llama2-legal-onnx/ /app/model
+#COPY model/model.onnx /app/model
+# Copy inference code and model into the image
+COPY app/requirements.txt .
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+# Copy your FastAPI app
+COPY app/main.py .
+
+# Expose port and launch Uvicorn
+EXPOSE 8000
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
