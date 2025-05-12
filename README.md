@@ -260,8 +260,7 @@ Steps handled in [`data_preprocessing.py`](https://github.com/shettynitis/LLM_Le
 
 ### 9.3 Load Testing
 
-- Locust script: [`tests/load_test.py`](tests/load_test.py)
-- Results: [`experiments/load_test_report.html`](experiments/load_test_report.html)
+- Ran a Locust simulation against the /generate endpoint while monitoring throughput, latency, and errors in Grafana’s “FastAPI Load Test” dashboard [`notebook for load testing`](https://github.com/shettynitis/LLM_LegalDocSummarization/blob/main/Monitoring_and_Evaluation/LoadTesting_Grafana.ipynb)
 
 ### 9.4 Business-Specific Evaluation
 
@@ -276,6 +275,9 @@ Steps handled in [`data_preprocessing.py`](https://github.com/shettynitis/LLM_Le
 ## 10. Online Data & Monitoring
 
 - **Monitoring Dashboards:** [Graphana config](https://github.com/shettynitis/LLM_LegalDocSummarization/blob/main/Monitoring_and_Evaluation/docker-compose-prometheus.yml)
+- **Closing the feedback loop:**: [LabelStudio](https://github.com/shettynitis/LLM_LegalDocSummarization/tree/main/Monitoring_and_Evaluation/closing_the_loop)
+- **Prometheus Dashboard:** [Dashboard](http://129.114.26.127:9090)
+- **Grafana Dashboard:** [Dashboard](http://129.114.26.127:3000)
 
 ---
 
