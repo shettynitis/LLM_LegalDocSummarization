@@ -192,7 +192,12 @@ Steps handled in [`data_preprocessing.py`](https://github.com/shettynitis/LLM_Le
 
 ## 8. Model Training
 
-### 8.1 Fine-tuning with LoRA + Ray Train + Lightning + MLflow
+### 8.1 Provisioning our resources and Jupyter container
+- We spin up our Ray head and worker nodes (each with 1×A100 GPU) using a small Jupyter notebook: [`Ray-Train/start_ray`](Ray-Train/submit_ray.py)
+
+- We use the following notebook to submit our Ray job: 
+
+### 8.2 Fine-tuning with LoRA + Ray Train + Lightning + MLflow
 
 - **Training script:** [`Ray-Train/sft_train_llama`](Ray-Train/sft_train_llama.py)
 - **Frameworks:** PyTorch Lightning, Ray Train (DDP + fault‐tolerance), PEFT (LoRA), MLflow for experiment tracking  
@@ -210,13 +215,14 @@ Steps handled in [`data_preprocessing.py`](https://github.com/shettynitis/LLM_Le
     ```  
  
 
-### 8.2 Experiment Tracking
+### 8.3 Experiment Tracking
 
 - Compare runs in [`mlruns/`](http://129.114.25.240:8000/#/experiments/2?searchFilter=&orderByKey=attributes.start_time&orderByAsc=false&startTime=ALL&lifecycleFilter=Active&modelVersionFilter=All+Runs&datasetsFilter=W10%3D)
 
-### 8.3 Scheduling
+### 8.4 Retrain Code
 
-- Training cronjob: [`infrastructure/ansible/train_cron.yml`](infrastructure/ansible/train_cron.yml)
+- Retrain Yaml: [`infrastructure/ansible/train_cron.yml`](infrastructure/ansible/train_cron.yml)
+- Retrain-code:
 
 ---
 
