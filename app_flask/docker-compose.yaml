@@ -1,0 +1,11 @@
+services:
+  summarizer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: llm-summarizer
+    ports:
+      - "8000:8000"
+    environment:
+      - API_URL=${API_URL}
+      - BASE_RAG_DATA_DIR=${BASE_RAG_DATA_DIR}

@@ -1,0 +1,28 @@
+# Use a slim Python base image
+FROM python:3.11-slim
+
+# Set a working directory
+WORKDIR /app
+
+# Copy only requirements first (for better layer caching)
+COPY requirements.txt .
+
+# Install OS-level dependencies (if you end up needing git, gcc, etc. uncomment these)
+# RUN apt-get update && \
+#     apt-get install -y --no-install-recommends \
+#       build-essential \
+#       git \
+#     && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy your application code & model
+COPY flow.py   .
+COPY food11.pth .
+
+# Expose the port Uvicorn will serve on
+EXPOSE 8000
+
+# When the container starts, run Uvicorn hosting your FastAPI "app" in flow.py
+ENTRYPOINT ["uvicorn", "flow:app", "--host", "0.0.0.0", "--port", "8000"]

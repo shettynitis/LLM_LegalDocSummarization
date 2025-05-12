@@ -1,19 +1,18 @@
+import os
 import pickle
 import faiss
 import numpy as np
 import requests
 from sentence_transformers import SentenceTransformer
-from .config import INDEX_PATH, MAPPING_PATH, EMB_MODEL_NAME, API_URL
+from .config import INDEX_PATH, MAPPING_PATH, CHUNK_DIR, EMB_MODEL_NAME, API_URL
 
 # ─── Load FAISS index & metadata once ───────────────────────────────
 _index = faiss.read_index(INDEX_PATH)
 
 with open(MAPPING_PATH, "rb") as f:
-    # metadata is expected to be a list of dicts, each with a "file_path" key
-    _metadata = pickle.load(f)
+    _metadata = pickle.load(f)  # could be list of dicts or list of strings
 
 _embedder = SentenceTransformer(EMB_MODEL_NAME)
-
 
 def _retrieve(query: str, top_k: int = 5):
     """
@@ -27,18 +26,36 @@ def _retrieve(query: str, top_k: int = 5):
     for dist, idx in zip(distances[0], indices[0]):
         if idx < 0 or idx >= len(_metadata):
             continue
-        meta = _metadata[idx]
+
+        entry = _metadata[idx]
+        # Determine how to get the path
+        if isinstance(entry, dict) and "file_path" in entry:
+            path = entry["file_path"]
+        elif isinstance(entry, str):
+            path = os.path.join(CHUNK_DIR, entry)
+        else:
+            # unexpected format—log and skip
+            print(f"[retrieve] Unrecognized metadata entry #{idx!r}: {entry!r}")
+            continue
+
+        # Debug: show us the path
+        print(f"[retrieve] Loading snippet from: {path}")
+
         snippet = ""
-        try:
-            with open(meta["file_path"], encoding="utf-8") as f:
-                snippet = f.read()
-        except Exception:
-            pass
+        if os.path.isfile(path):
+            try:
+                with open(path, encoding="utf-8") as f:
+                    snippet = f.read().strip()
+            except Exception as e:
+                print(f"[retrieve] Error reading {path!r}: {e}")
+        else:
+            print(f"[retrieve] File not found: {path!r}")
+
         results.append((float(dist), snippet))
     return results
 
 
-def summarize_text(user_text: str) -> str:
+def summarize_text(user_text: str, max_new_tokens: int = 100) -> str:
     """
     1) Retrieve top‐k chunks for user_text
     2) Build a combined prompt
@@ -54,15 +71,32 @@ def summarize_text(user_text: str) -> str:
     prompt_parts.append(f"### Query:\n{user_text}\n")
     full_prompt = "\n".join(prompt_parts)
 
+    # Debug: print to console
+    print("full_prompt:\n", full_prompt)
+
     # 3) Call real API or mock
     if API_URL:
         try:
-            resp = requests.post(API_URL, json={"text": full_prompt})
+            resp = requests.post(
+                API_URL,
+                json={
+                    "prompt": full_prompt,
+                    "max_new_tokens": max_new_tokens
+                }
+            )
             resp.raise_for_status()
-            return resp.json().get("summary", "")
+            data = resp.json()
+            # adjust the key below to match your API's response field
+            return data.get("summary", data.get("generated_text", ""))
         except Exception as e:
             print(f"[summarize_text] API call failed: {e}")
 
     # —————————————————— MOCK ——————————————————
-    snippet = user_text.strip().replace("\n", " ")
-    return f"📄 MOCK SUMMARY (first 100 chars): {snippet[:100]}"
+    flat = full_prompt.replace("\n", " ")
+    return f"📄 MOCK SUMMARY (first 100 chars): {flat[:100]}"
+
+
+if __name__ == "__main__":
+    # simple manual test
+    text = "Summarize clause 7.2"
+    print(summarize_text(text, max_new_tokens=10))
