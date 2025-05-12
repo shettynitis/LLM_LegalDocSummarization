@@ -229,7 +229,7 @@ Steps handled in [`data_preprocessing.py`](https://github.com/shettynitis/LLM_Le
   - On worker restarts, Ray will supply the last checkpoint directory and Lightning will resume from `checkpoints/last.ckpt`.  
 
 - **Logging:**  
-  - Metrics (train/val loss, epochs) and checkpoint paths are automatically logged to MLflow via the `MLFlowLogger`.  
+  - Metrics (train/val loss, epochs) are automatically logged to MLflow via the `MLFlowLogger`.  
  
 
 ### 8.3 Experiment Tracking
@@ -269,14 +269,13 @@ Steps handled in [`data_preprocessing.py`](https://github.com/shettynitis/LLM_Le
 
 ### 9.5 Staged Deployment
 
-- Staging deployment: [`infrastructure/ansible/deploy_staging.yml`](infrastructure/ansible/deploy_staging.yml)
+- Staging deployment: [`Staging deployment workflow`](https://github.com/shettynitis/LLM_LegalDocSummarization/blob/main/ci-cd/ansible/argocd/argocd_add_staging.yml)
 
 ---
 
 ## 10. Online Data & Monitoring
 
-- **Online Ingestion:** New documents POSTed to `/ingest` endpoint
-- **Monitoring Dashboards:** Grafana dashboards in [`monitoring/grafana/`](monitoring/grafana/)
+- **Monitoring Dashboards:** [Graphana config](https://github.com/shettynitis/LLM_LegalDocSummarization/blob/main/Monitoring_and_Evaluation/docker-compose-prometheus.yml)
 
 ---
 
