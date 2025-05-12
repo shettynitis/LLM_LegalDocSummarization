@@ -276,7 +276,6 @@ Steps handled in [`data_preprocessing.py`](https://github.com/shettynitis/LLM_Le
 
 - **Online Ingestion:** New documents POSTed to `/ingest` endpoint
 - **Monitoring Dashboards:** Grafana dashboards in [`monitoring/grafana/`](monitoring/grafana/)
-- **Data Drift:** [`src/monitor/drift.py`](src/monitor/drift.py)
 
 ---
 
@@ -286,6 +285,4 @@ Steps handled in [`data_preprocessing.py`](https://github.com/shettynitis/LLM_Le
 - Triggers: push to `main` → tests → build Docker images → deploy to staging
 - Flask App: We have a flask app, which takes input from user, looks up on RAG, appends it to the user promt, sends the request with the new promt to our ONNX model through FastAPI, which then returns the summary. The summary is then appended to the UI, and user has the option to download the summary text. [Code](https://github.com/shettynitis/LLM_LegalDocSummarization/tree/main/app_flask)
 
----
 
-## 12. Getting Started on Chameleon
