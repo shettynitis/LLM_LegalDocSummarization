@@ -1,0 +1,19 @@
+name: ls
+services:
+  label-studio:
+    image: heartexlabs/label-studio:1.16.0
+    container_name: label-studio
+    ports:
+      - "8080:8080"
+    environment:
+      - LABEL_STUDIO_URL=http://label-studio:8080
+      - LABEL_STUDIO_USERNAME=labelstudio@example.com
+      - LABEL_STUDIO_PASSWORD=labelstudio
+      - LABEL_STUDIO_USER_TOKEN=ab9927067c51ff279d340d7321e4890dc2841c4a
+      - POSTGRES_HOST=app-db
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=appdb
+    networks:
+      - production_net
