@@ -264,7 +264,7 @@ Steps handled in [`data_preprocessing.py`](https://github.com/shettynitis/LLM_Le
 
 ### 9.4 Business-Specific Evaluation
 
-- Evaluation plan: [`docs/business_eval.md`](docs/business_eval.md)
+- Evaluation plan: [`docs/business_eval.md`](https://github.com/shettynitis/LLM_LegalDocSummarization/blob/main/doc/business.md)
 
 ### 9.5 Staged Deployment
 
