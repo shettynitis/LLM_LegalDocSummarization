@@ -18,7 +18,7 @@ This repository contains the code and configuration for the LLM Legal Document S
 
 ## 2. Scale
 
-- **Offline Data:** 10 GB raw documents (~20 K files)
+- **Offline Data:** 10 GB raw documents (~20 K files) - Zenodo data source, 3.3k files containing case data: Kaggle data source deepcontractor/supreme-court-judgment-prediction
 - **Model Size:** Fine-tuned Llama-2-7B; training takes uses 2×A100 GPUs
 - **Deployment Throughput:** ~500 inference requests/day (~1 req/min)
 
@@ -26,7 +26,7 @@ This repository contains the code and configuration for the LLM Legal Document S
 
 ## 3. Architecture Diagram
 
-![Untitled-2025-05-11-1923](https://github.com/user-attachments/assets/1c2e2095-0107-4f7b-ab7e-435c30a7360b)
+![image](https://github.com/user-attachments/assets/ebbbdc4c-2d79-4a0b-96f2-cc2b7aa0c0a3)
 
 ## 4. Infrastructure & IaC
 
@@ -77,7 +77,7 @@ Structure and contents:
 Mlflow artifacts folder contains all the artifacts generated during serving and training.
 Ray folder contains as ray train related checkpoints
 Postgress folder contains
-Rag Data folder contains all data related to our RAG model `sentence-transformers/all-MiniLM-L6-v2` which includes the data chunks, vector db, mapping info.
+Rag Data folder contains all data related to our RAG model `sentence-transformers/all-MiniLM-L6-v2` which includes the data chunks, vector db, mapping info. 
 
 ---
 
@@ -88,7 +88,7 @@ Rag Data folder contains all data related to our RAG model `sentence-transformer
 We use the **Zenodo Indian & UK Legal Judgments Dataset** containing ~20K court cases and corresponding human-written summaries.
 
 - **Sources:** `IN-Abs`, `UK-Abs`, and `IN-Ext`
-- **Data Size:** ~10 GB total, over 20,000 legal documents and associated summaries.
+- **Data Size:** ~10 GB total, over 20,000 legal documents and associated summaries - from Zenodo.
 - **Format:** Paired `.txt` files for full judgments and summaries
 
 #### Example Sample (`train.jsonl`)
@@ -188,6 +188,29 @@ Steps handled in [`data_preprocessing.py`](https://github.com/shettynitis/LLM_Le
          └──────────────────────────────┘
 ```
 
+#### RAG Pipeline: Supreme Court Judgment Summarization
+
+1. **Download & Extract**  
+   - Use Kaggle API to pull `deepcontractor/supreme-court-judgment-prediction` into `/mnt/block/rag_data` and unzip.
+
+2. **Load & Inspect**  
+   - Read `justice.csv` with Pandas to verify row count and columns (`name`, `facts`, etc.).
+
+3. **Clean & Serialize**  
+   - Normalize newlines, strip empty lines, and write each case’s `facts` to `rag_txt/{idx}_{safe_name}.txt`.
+
+4. **Chunk Documents**  
+   - Tokenize with `sentence-transformers/all-MiniLM-L6-v2` (512-token window, 64-token overlap).  
+   - Save each piece to `rag_chunks/{original}_chunkXXX.txt`.
+
+5. **Embed & Index**  
+   - Encode chunks via `SentenceTransformer`.  
+   - Build a FAISS L2 index over the vectors.  
+   - Persist `model_rag/legal-facts.index` and `model_rag/index_to_doc.pkl`.
+
+6. **Query‐Time Retrieval**  
+   - Embed user query, FAISS search → top-K chunks.  
+   - Load snippets, assemble prompt, send to fine-tuned Llama-2 for final summary.  
 ---
 
 ## 8. Model Training
