@@ -1,0 +1,6 @@
+all:
+  hosts:
+    rag-summarizer:
+      ansible_host: "${app_floating_ip}"   # set via Terraform output
+      ansible_user: cc
+      ansible_ssh_private_key_file: ~/.ssh/id_project_group33

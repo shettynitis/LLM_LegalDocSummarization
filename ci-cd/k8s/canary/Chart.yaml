@@ -1,0 +1,4 @@
+apiVersion: v2
+name: llm-summarizer-canary
+version: 1.0.0
+description: LLM Summarizer Canary Deployment

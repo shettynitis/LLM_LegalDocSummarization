@@ -1,3 +1,5 @@
 .venv/
 user_inputs.log
 app_flask/__pycache__/
+.DS_Store
+app_flask/test/__pycache__/

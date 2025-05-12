@@ -1,187 +1,288 @@
-## Legal Document Summarizer
+# LLM Legal Document Summarization
 
-<!-- 
-Discuss: Value proposition: Your will propose a machine learning system that can be 
-used in an existing business or service. (You should not propose a system in which 
-a new business or service would be developed around the machine learning system.) 
-Describe the value proposition for the machine learning system. What’s the (non-ML) 
-status quo used in the business or service? What business metric are you going to be 
-judged on? (Note that the “service” does not have to be for general users; you can 
-propose a system for a science problem, for example.)
--->
+This repository contains the code and configuration for the LLM Legal Document Summarization project, deployed on Chameleon Cloud. Follow the sections below to understand the system lifecycle from data ingestion to production serving, and see links to the specific implementation files.
 
-### Value Proposition
+---
 
-Law firms and legal departments invest significant time and cost into manually reading, annotating, and summarizing lengthy legal documents—judgments, case files, contracts. Our system addresses this gap by fine-tuning Llama-2-7b with a Retrieval-Augmented Generation (RAG) pipeline to:
+## 1. Value Proposition
 
-1. Identify relevant documents from a repository
-2. Automatically generate accurate, concise summaries
+**Target Customer:** Legal analysts at corporate law firms who need fast, accurate summaries of incoming legal documents to accelerate review.
 
-Our project is similar to existing ML-based legal software like Kira Systems and Casetext that tackles contract/case judgement review and search.
+- **Customer Details:**
+  - Receives >100 documents/day (.pdf, .docx)
+  - Needs to look up previous judgements and their summaries by searching key words
+  - Requires summary within minutes of upload
+  - Ground-truth labels (expert summaries) available after review
 
-**Business Metrics**
-* Time Saved: Fewer hours spent summarizing.
-* Cost Reduction: Reallocate billable hours to higher-value tasks.
-* Quality: Measure summary completeness (e.g., ROUGE scores, user feedback).
-  
-This system aims to streamline document handling while maintaining high-quality analysis by integrating automated summarization into existing legal workflows.
+**Design Influences:** Data size, latency requirements, retraining frequency.
 
+## 2. Scale
 
-### Contributors
+- **Offline Data:** 10 GB raw documents (~20 K files) - Zenodo data source, 3.3k files containing case data: Kaggle data source deepcontractor/supreme-court-judgment-prediction
+- **Model Size:** Fine-tuned Llama-2-7B; training takes uses 2×A100 GPUs
+- **Deployment Throughput:** ~500 inference requests/day (~1 req/min)
 
-<!-- Table of contributors and their roles. 
-First row: define responsibilities that are shared by the team. 
-Then, each row after that is: name of contributor, their role, and in the third column, 
-you will link to their contributions in this repo (or multiple repos if you split your code). -->
+---
 
-| Name              | Responsible for                                                                                                              | Link to their commits in this repo                                                        |
-|-------------------|------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
-| All team members  | - Overall project idea<br>- High-level system design<br>- CI/CD and Continuous Training (Unit 3) <br>- Final integration & docs | [All contributions](https://github.com/shettynitis/LLM_LegalDocSummarization/commits)                         |
-| Navya Kriti     | - Model training (Units 4 & 5)<br>- LoRA fine-tuning with Ray cluster<br>- Experiment tracking & logging (MLflow)            | [Commits by Navya](https://github.com/shettynitis/LLM_LegalDocSummarization/commits?author=Navya0203)   |
-| Nitisha Shetty    | - Model serving & monitoring (Units 6 & 7)<br>- Building inference API<br>- Load testing, staged & canary deployment         | [Commits by Nitisha](https://github.com/shettynitis/LLM_LegalDocSummarization/commits?author=shettynitis) |
-| Sakshi Goenka       | - Data pipeline (Unit 8)<br>- Persistent storage & data ingestion<br>- Online/offline data management                        | [Commits by Sakshi](https://github.com/shettynitis/LLM_LegalDocSummarization/commits?author=robo-ro)     |
+## 3. Architecture Diagram
 
+![image](https://github.com/user-attachments/assets/ebbbdc4c-2d79-4a0b-96f2-cc2b7aa0c0a3)
 
-### System Diagram
+## 4. Infrastructure & IaC
 
-<!-- Overall digram of system. Doesn't need polish, does need to show all the pieces. 
-Must include: all the hardware, all the containers/software platforms, all the models, 
-all the data. -->
-<img width="997" alt="Screenshot 2025-04-02 at 11 28 24 PM" src="https://github.com/user-attachments/assets/a2094e33-f22c-40da-a213-f71933e280c0" />
+Provisioning and configuration via Terraform and Ansible:
 
+- **Terraform:** [`Terraform configurations, variables, setting - DAY 0`](https://github.com/shettynitis/LLM_LegalDocSummarization/tree/main/ci-cd/tf/kvm)
+- **Ansible Playbooks:** [`Ansible notebooks`](https://github.com/shettynitis/LLM_LegalDocSummarization/tree/main/ci-cd/ansible)
+- **Argo CD**: [`Argo CD notebooks for 3 environments`](https://github.com/shettynitis/LLM_LegalDocSummarization/tree/main/ci-cd/ansible/argocd)
 
-### Summary of Outside Materials
+---
 
-<!-- In a table, a row for each dataset, foundation model. 
-Name of data/model, conditions under which it was created (ideally with links/references), 
-conditions under which it may be used. -->
+## 5. Persistent Storage
 
-| Name / Version                | How It Was Created                                                                                                  | Conditions of Use                                                               |
-|-------------------------------|----------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
-| **Zenodo Legal Dataset**      | Curated from publicly available court rulings, case files, and legal judgments. | |
-| **Additional Legal Docs**     | Internal or publicly released legal documents from open data portals; combined and pre-processed by the team.       |  |
-| **Llama-2-7b** (Meta)        | Pretrained by Meta on diverse text sources. Available via Hugging Face with special access.                          | Must adhere to Meta’s Model License and Hugging Face usage agreements.           |
-| **FAISS** (Vector Store)      | Open-source library for efficient similarity search. Developed by Facebook AI Research.                             | Apache-2.0 license; can be used and distributed freely.                          |
-| **LoRA / `trl` Library**      | Open-source Python library enabling parameter-efficient fine-tuning of LLMs.                                        | Various open-source licenses.     |
+On Chameleon:
 
+- **Object Store:** 
 
+[Notebook with instructions to create and access object store, code to download dataset, preprocess, partition and store in the object store created](https://github.com/shettynitis/LLM_LegalDocSummarization/blob/main/1_data_pipeline/2_create_and_connect_to_object_store.ipynb)
 
-### Summary of infrastructure requirements
+Structure and contents:
 
-<!-- Itemize all your anticipated requirements: What (`m1.medium` VM, `gpu_mi100`), 
-how much/when, justification. Include compute, floating IPs, persistent storage. 
-The table below shows an example, it is not a recommendation. -->
-| Requirement               | How many/when                                 | Justification                                                                                                                        |
-|---------------------------|-----------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
-| **`m1.medium` VMs**       | 2 permanent VMs + 1 staging VM               | - **2 permanent**: one hosts the production RAG API and FAISS index, the other runs MLflow and DevOps automation<br>- **1 staging**: used for load testing, integration tests, and canary deployment before going live                                                                                                                     |
-| **GPU nodes (`A100` or `mi100`)** | 2 nodes for ~4 hours/session, up to 2x/week | - Needed for fine-tuning Llama-2-7b with LoRA<br>- Each session covers hyperparameter tuning or retraining on new data<br>- If doing distributed training, 2 GPUs can be used concurrently for faster experimentation                                                                                                                 |
-| **Floating IPs**          | 1 permanent for production + 1 on-demand for staging | - **Production**: Exposes the API externally so users (or graders) can query the summarization service<br>- **On-demand**: Temporarily attach to staging when we need external testing or demos                                                                                                                                    |
-| **Persistent Volume (~50–100GB)** | Attached for the entire project       | - Stores the legal dataset (Zenodo files), preprocessed text chunks, fine-tuned model artifacts, and any large logs<br>- Avoids having to re-download or re-process data every time we redeploy                                                                                            |
+[object-persist-project33](https://chi.tacc.chameleoncloud.org/project/containers/container/object-persist-project33/)
+```
+├── production.jsonl
+├── test.jsonl
+└── train.jsonl
+```
 
+- **Block Volume:**
+ [Notebook with instructions to create, partition, add file system, access, run containers on block volume](https://github.com/shettynitis/LLM_LegalDocSummarization/blob/main/1_data_pipeline/3_create_block_storage.ipynb)
 
-### Detailed Design Plan
+We created a block volume of 50 GiB initially, but extended to 100 GiB to store our ONNX model, RAG data, etc.
 
-<!-- In each section, you should describe (1) your strategy, (2) the relevant parts of the 
-diagram, (3) justification for your strategy, (4) relate back to lecture material, 
-(5) include specific numbers. -->
+Structure and contents:
 
-#### Model training and training platforms
+[block-persist-project33]([https://chi.tacc.chameleoncloud.org/project/containers/container/object-persist-project33/](https://kvm.tacc.chameleoncloud.org/project/volumes/f82ca11f-e219-4f3d-ba3e-5ba645f324d6/))
+```
+├── minio_data
+  ├── mlflow-artifacts
+  └── ray
+├── postgres_data
+└── rag_data
+  ├── model_rag
+    ├── index_to_doc.pkl
+    └── legal-facts.index
+  └── rag_chunks  
+```
+Mlflow artifacts folder contains all the artifacts generated during serving and training.
+Ray folder contains as ray train related checkpoints
+Postgress folder contains
+Rag Data folder contains all data related to our RAG model `sentence-transformers/all-MiniLM-L6-v2` which includes the data chunks, vector db, mapping info. 
 
-<!-- Make sure to clarify how you will satisfy the Unit 4 and Unit 5 requirements, 
-and which optional "difficulty" points you are attempting. -->
+---
 
-1. Strategy
-* We will fine-tune Llama-2-7b using LoRA on a Ray cluster (GPU nodes on Chameleon).
-* This ensures we can handle large-scale data, while the LoRA approach keeps GPU usage manageable.
-* We will track metrics (loss, ROUGE, hyperparams) in MLflow, also hosted on Chameleon.
-2. Diagram References
-* In the “Training” section of our system diagram, data from the Data Pipeline feeds into the Ray cluster.
-* MLflow logs are stored on a CPU node, giving us experiment histories and artifact versioning.
-3. Justification
-* LoRA is a parameter-efficient method for large LLM fine-tuning, reducing GPU memory overhead.
-* Using Ray + MLflow ensures we can do robust scheduling and logging, consistent with class best practices.
-4. Relation to Lecture Material
-* Unit 4: We meet “train and re-train” by repeatedly fine-tuning Llama-2-7b on new or updated data.
-* Unit 5: Self-hosted MLflow on Chameleon tracks all runs. A Ray cluster schedules training jobs (just like in the labs).
-5. Specific Numbers
-* GPU usage: ~3–6 GPU hours per training session (depending on dataset size).
-* Data: ~10,000 legal documents from Zenodo, chunked to ~512–1,024 tokens each.
-* Extra Difficulty (Unit 4/5):
-  - Using Ray Train
-  - Training strategies for large models
+## 6. Offline Data
 
+### Training Dataset & Data Lineage
 
-#### Model serving and monitoring platforms
+We use the **Zenodo Indian & UK Legal Judgments Dataset** containing ~20K court cases and corresponding human-written summaries.
 
-<!-- Make sure to clarify how you will satisfy the Unit 6 and Unit 7 requirements, 
-and which optional "difficulty" points you are attempting. -->
+- **Sources:** `IN-Abs`, `UK-Abs`, and `IN-Ext`
+- **Data Size:** ~10 GB total, over 20,000 legal documents and associated summaries - from Zenodo.
+- **Format:** Paired `.txt` files for full judgments and summaries
 
-1. Strategy
-* We will containerize a FastAPI-based inference service that does Retrieval-Augmented Generation (RAG).
-* At inference, a FAISS index (or TF-IDF) retrieves relevant docs; the fine-tuned Llama-2-7b model then summarizes them.
-* We’ll do load testing in staging, then optionally a canary environment before production.
-* Online monitoring will capture performance metrics and user feedback.
-2. Diagram References
-* The “Deployment” section: RAG Vector DB + Summarization Model containers.
-* The “Monitoring” block receives logs and metrics from production.
-3. Justification
-* Splitting out retrieval from generation is standard RAG practice: it reduces total model memory usage and ensures relevant documents are provided.
-* We will track concurrency (aiming for ~5–7 concurrent requests) and keep latencies as low as possible.
-4. Relation to Lecture Material
-* Unit 6: An API endpoint with explicit performance/latency goals. Possibly use 4-bit or 8-bit quantization to optimize.
-* Unit 7: We incorporate offline evaluation (ROUGE), load testing in staging, canary deployment, and continuous monitoring.
-5. Specific Numbers
-* Latency: <10 seconds on average for one summarization query.
-* Load: ~20 RPS in staging to test concurrency.
-* Close the Loop: If user feedback indicates poor results, we mark those examples for future re-training.
+#### Example Sample (`train.jsonl`)
+```json
+{
+  "filename": "UKCiv2012.txt",
+  "judgement": "The claimant seeks damages following breach of contract. The court heard evidence from both parties. After reviewing the statutory framework and case law precedent, the court finds that the defendant did not fulfill their obligations...",
+  "summary": "The defendant breached the contract. The court awarded damages to the claimant.",
+  "meta": {
+    "doc_words": 2176,
+    "sum_words": 132,
+    "ratio": 0.06
+  }
+}
+```
+#### Relation to Customer Use Case
 
-#### Data pipeline
+Our target user (a legal analyst at a law firm) regularly deals with such long-form judicial decisions. The Zenodo dataset closely mirrors their real-world workflow:
+	•	They review lengthy judgment documents daily.
+	•	They generate or consume summaries internally for client reporting.
+	•	Our model mimics this process by learning from historic summaries.
 
-<!-- Make sure to clarify how you will satisfy the Unit 8 requirements,  and which 
-optional "difficulty" points you are attempting. -->
+#### About Production Samples
 
-1. Strategy
-* Persistent storage on Chameleon (50–100 GB) holds the chunked legal dataset, model artifacts, etc.
-* Python ETL scripts fetch, clean, and split raw legal texts from Zenodo or other sources.
-* The pipeline is triggered whenever new data arrives.
-2. Diagram References
-* The “Data Source” box in the system design feeds training data into the Ray cluster.
-* We store outputs in the “Persistent Storage” volume, accessible by both training and serving components.
-3. Justification
-* Offline data management ensures stable re-training.
-* If the system sees newly labeled or user-provided data, we can incorporate it into the next training cycle.
-4. Relation to Lecture Material
-* Unit 8: Following Lab 8’s approach to storage provisioning(as per the project manual), we will attach a volume or use object storage on Chameleon.
-* We also simulate real-time data by generating user queries to test the pipeline in staging/canary.
-5. Specific Numbers
-* 50–100 GB capacity volume.
-* Data updated weekly or on a manual schedule.
+Production samples (the 10% test set):
+	•	Contain no ground-truth summaries at inference time.
+	•	In a deployed setting, these would represent new unseen judgments uploaded by users.
+	•	Once reviewed by a human expert, feedback summaries could be used to retrain the model thus closing the feedback loop.
 
+---
 
-#### Continuous X
+## 7. Data Pipeline
 
-<!-- Make sure to clarify how you will satisfy the Unit 3 requirements,  and which 
-optional "difficulty" points you are attempting. -->
+#### Processing Pipeline
 
-1. Strategy
-* We define infrastructure-as-code using Terraform or python-chi to spin up CPU/GPU nodes on Chameleon.
-* Our CI/CD pipeline automates:
-  - Retraining on new data,
-  - Running offline eval,
-  - Packaging the model in a Docker image,
-  - Deploying to staging for tests,
-  - Promoting to canary,
-  - Deploying to production.
-2. Diagram References
-* The central CI/CD block orchestrates the entire pipeline.
-* Staging, canary, and production are distinct nodes or container groups in the our deplyment block.
-4. Justification
-* Minimizes “clickOps,” ensures reproducibility and version control.
-* Cloud-native approach: everything is containerized, and changes are made by updating Git, not manually configuring servers.
-5. Relation to Lecture Material
-* Unit 3: Microservices in containers, staged deployments, and an automated pipeline for continuous training & integration.
-* We follow lab patterns: no manual edits to running instances (immutable infra).
-6. Specific Numbers
-* 1–2 GPU nodes for training, 2–3 CPU nodes for staging, production, MLflow, etc.
-* Staging tests include ~20 concurrency requests, canary ~10% traffic, then full production.
+Steps handled in [`data_preprocessing.py`](https://github.com/shettynitis/LLM_LegalDocSummarization/blob/main/1_data_pipeline/data_preprocessing.py):
+
+1. **Ingestion:** Load documents from raw folders.
+2. **Merging:** Combine segment-wise summaries if full summary not available.
+3. **Cleaning:** Normalize unicode, remove extra whitespace, lowercase.
+4. **Sanity checks:** Remove empty/duplicate/missing files.
+5. **Filtering:** Retain samples with 50–1500 summary words and acceptable doc:summary ratios.
+6. **Split:** 70% train, 20% test, 10% production — written to `*.jsonl`.
+
+### Data Pipeline Overview
+
+```
+         ┌──────────────────────────────┐
+         │    Raw Zenodo Dataset        │
+         │  (/data/raw/* subfolders)    │
+         └────────────┬─────────────────┘
+                      │
+                      ▼
+         ┌──────────────────────────────┐
+         │   Ingestion & File Loading   │
+         │ - Load judgment + summary    │
+         │ - Handle IN-Abs, UK-Abs,     │
+         │   IN-Ext variants            │
+         └────────────┬─────────────────┘
+                      │
+                      ▼
+         ┌──────────────────────────────┐
+         │     Merging Segment-wise     │
+         │ - Combine partial summaries  │
+         │   (facts, statute, etc.)     │
+         └────────────┬─────────────────┘
+                      │
+                      ▼
+         ┌──────────────────────────────┐
+         │         Cleaning Text        │
+         │ - Unicode normalization      │
+         │ - Lowercasing                │
+         │ - Remove extra whitespace    │
+         └────────────┬─────────────────┘
+                      │
+                      ▼
+         ┌──────────────────────────────┐
+         │       Sanity Checks          │
+         │ - Remove empty/missing files │
+         │ - Check for duplicates       │
+         └────────────┬─────────────────┘
+                      │
+                      ▼
+         ┌──────────────────────────────┐
+         │       Statistical Filter     │
+         │ - 50–1500 summary words      │
+         │ - Ratio: 1–50% of doc length │
+         └────────────┬─────────────────┘
+                      │
+                      ▼
+         ┌──────────────────────────────┐
+         │        Split & Dump          │
+         │ - 70% train                  │
+         │ - 20% test                   │
+         │ - 10% production             │
+         │ → Output as `.jsonl` files   │
+         └──────────────────────────────┘
+```
+
+#### RAG Pipeline: Supreme Court Judgment Summarization
+
+1. **Download & Extract**  
+   - Use Kaggle API to pull `deepcontractor/supreme-court-judgment-prediction` into `/mnt/block/rag_data` and unzip.
+
+2. **Load & Inspect**  
+   - Read `justice.csv` with Pandas to verify row count and columns (`name`, `facts`, etc.).
+
+3. **Clean & Serialize**  
+   - Normalize newlines, strip empty lines, and write each case’s `facts` to `rag_txt/{idx}_{safe_name}.txt`.
+
+4. **Chunk Documents**  
+   - Tokenize with `sentence-transformers/all-MiniLM-L6-v2` (512-token window, 64-token overlap).  
+   - Save each piece to `rag_chunks/{original}_chunkXXX.txt`.
+
+5. **Embed & Index**  
+   - Encode chunks via `SentenceTransformer`.  
+   - Build a FAISS L2 index over the vectors.  
+   - Persist `model_rag/legal-facts.index` and `model_rag/index_to_doc.pkl`.
+
+6. **Query‐Time Retrieval**  
+   - Embed user query, FAISS search → top-K chunks.  
+   - Load snippets, assemble prompt, send to fine-tuned Llama-2 for final summary.  
+---
+
+## 8. Model Training
+
+### 8.1 Provisioning our resources and Jupyter container
+- We spin up our Ray head and worker nodes (each with 1×A100 GPU) using a small Jupyter notebook: [`Ray-Train/start_ray`](Ray-Train/start_ray.ipynb)
+
+- We use the following notebook to submit our Ray job: [`Ray-Train/submit_ray`](Ray-Train/submit_ray.ipynb)
+
+### 8.2 Fine-tuning with LoRA + Ray Train + Lightning + MLflow
+
+- **Training script:** [`Ray-Train/sft_train_llama`](Ray-Train/sft_train_llama.py)
+- **Frameworks:** PyTorch Lightning, Ray Train (DDP + fault‐tolerance), PEFT (LoRA), MLflow for experiment tracking  
+- **Checkpointing:**  
+  - We save both the best `val_loss` and the last epoch into `./checkpoints/` via Lightning’s `ModelCheckpoint(save_top_k=1, save_last=True)` callback.  
+  - On worker restarts, Ray will supply the last checkpoint directory and Lightning will resume from `checkpoints/last.ckpt`.  
+
+- **Logging:**  
+  - Metrics (train/val loss, epochs) and checkpoint paths are automatically logged to MLflow via the `MLFlowLogger`.  
+ 
+
+### 8.3 Experiment Tracking
+
+- Compare runs in [`mlruns/`](http://129.114.25.240:8000/#/experiments/2?searchFilter=&orderByKey=attributes.start_time&orderByAsc=false&startTime=ALL&lifecycleFilter=Active&modelVersionFilter=All+Runs&datasetsFilter=W10%3D)
+
+### 8.4 Retrain Code
+
+- Retrain Yaml: [`train.yml`](ci-cd/workflows/train-model.yaml)
+- Retrain-code: [`train.py`](ci-cd/flow(1).py)
+
+---
+
+## 9. Model Serving & Evaluation
+
+### 9.1 API Endpoint
+
+- FastAPI app: [`Code where we are creating the Fast API`](https://github.com/shettynitis/LLM_LegalDocSummarization/blob/main/Serving/fastapi_onnx/app/main.py)
+- Dockerfile: [`Dockerfile`](https://github.com/shettynitis/LLM_LegalDocSummarization/blob/main/Serving/fastapi_onnx/Dockerfile)
+- Input: User Prompt appended with RAG output
+- Output: summary text
+
+### 9.2 Offline Evaluation
+
+- PyTest suite: [`tests/test_offline_eval.py`](tests/test_offline_eval.py)
+- ROUGE scores logged to MLflow
+
+### 9.3 Load Testing
+
+- Locust script: [`tests/load_test.py`](tests/load_test.py)
+- Results: [`experiments/load_test_report.html`](experiments/load_test_report.html)
+
+### 9.4 Business-Specific Evaluation
+
+- Evaluation plan: [`docs/business_eval.md`](docs/business_eval.md)
+
+### 9.5 Staged Deployment
+
+- Staging deployment: [`infrastructure/ansible/deploy_staging.yml`](infrastructure/ansible/deploy_staging.yml)
+
+---
+
+## 10. Online Data & Monitoring
+
+- **Online Ingestion:** New documents POSTed to `/ingest` endpoint
+- **Monitoring Dashboards:** Grafana dashboards in [`monitoring/grafana/`](monitoring/grafana/)
+
+---
+
+## 11. CI/CD & Continuous Training
+
+- GitHub Actions workflow: [`CI git merge test`]([.github/workflows/ci_cd.yml](https://github.com/shettynitis/LLM_LegalDocSummarization/blob/main/.github/workflows/ci.yml))
+- Triggers: push to `main` → tests → build Docker images → deploy to staging
+- Flask App: We have a flask app, which takes input from user, looks up on RAG, appends it to the user promt, sends the request with the new promt to our ONNX model through FastAPI, which then returns the summary. The summary is then appended to the UI, and user has the option to download the summary text. [Code](https://github.com/shettynitis/LLM_LegalDocSummarization/tree/main/app_flask)
+
 

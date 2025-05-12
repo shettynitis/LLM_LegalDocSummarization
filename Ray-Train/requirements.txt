@@ -1,0 +1,17 @@
+# ==== core libs ====
+bitsandbytes
+transformers
+accelerate
+datasets
+trl
+peft
+evaluate
+lightning          # ↳ PyTorch Lightning (just “lightning” on PyPI)
+
+# ==== PyTorch stack ====
+torch              # leave un‑pinned so you can pick the right CUDA wheel
+torchvision
+
+# ==== experiment tracking / infra ====
+mlflow
+huggingface-hub

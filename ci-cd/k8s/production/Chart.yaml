@@ -1,0 +1,4 @@
+apiVersion: v2
+name: llm-summarizer-production
+version: 1.0.0
+description: LLM Summarizer Production Deployment
