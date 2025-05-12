@@ -197,7 +197,7 @@ Steps handled in [`data_preprocessing.py`](https://github.com/shettynitis/LLM_Le
 
 ### 8.1 Fine-tuning with LoRA + Ray Train + Lightning + MLflow
 
-- **Training script:** [`Ray-Train/sft_train_llama`](Ray-Train/sft_train_llama)
+- **Training script:** [`Ray-Train/sft_train_llama`](Ray-Train/sft_train_llama.py)
 - **Frameworks:** PyTorch Lightning, Ray Train (DDP + fault‐tolerance), PEFT (LoRA), MLflow for experiment tracking  
 - **Checkpointing:**  
   - We save both the best `val_loss` and the last epoch into `./checkpoints/` via Lightning’s `ModelCheckpoint(save_top_k=1, save_last=True)` callback.  
