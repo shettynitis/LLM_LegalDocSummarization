@@ -9,7 +9,7 @@ from mlflow.tracking import MlflowClient
 MLFLOW_TRACKING_URI = "http://129.114.25.240:8000"
 MODEL_REGISTRY_NAME = "LLamaRayModel"         # your registered model name
 BASE_MODEL_ALIAS   = "development"            # or whatever alias your “base” model has
-TRAIN_SCRIPT       = "train_sft_with_lightning_ray_mlflow.py"
+TRAIN_SCRIPT       = "sft_train_llama.py"
 # ─────────────────────────────────────────────────────────────────────
 
 @task
