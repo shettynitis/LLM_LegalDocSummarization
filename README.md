@@ -32,12 +32,9 @@ This repository contains the code and configuration for the LLM Legal Document S
 
 Provisioning and configuration via Terraform and Ansible:
 
-- **Terraform:** [`infrastructure/terraform/`](infrastructure/terraform/)
-- **Ansible Playbooks:** [`infrastructure/ansible/`](infrastructure/ansible/)
-
-Key files:
-- [`terraform/main.tf`](infrastructure/terraform/main.tf): network, volumes, compute instances
-- [`ansible/deploy.yml`](infrastructure/ansible/deploy.yml): installs Docker, Jupyter, Label Studio, experiment tracker
+- **Terraform:** [`Terraform configurations, variables, setting - DAY 0`](https://github.com/shettynitis/LLM_LegalDocSummarization/tree/main/ci-cd/tf/kvm)
+- **Ansible Playbooks:** [`Ansible notebooks`](https://github.com/shettynitis/LLM_LegalDocSummarization/tree/main/ci-cd/ansible)
+- **Argo CD**: [`Argo CD notebooks for 3 environments`](https://github.com/shettynitis/LLM_LegalDocSummarization/tree/main/ci-cd/ansible/argocd)
 
 ---
 
@@ -227,9 +224,9 @@ Steps handled in [`data_preprocessing.py`](https://github.com/shettynitis/LLM_Le
 
 ### 9.1 API Endpoint
 
-- FastAPI app: [`src/serve/app.py`](src/serve/app.py)
-- Dockerfile: [`src/serve/Dockerfile`](src/serve/Dockerfile)
-- Input: JSON with document ID  
+- FastAPI app: [`Code where we are creating the Fast API`](https://github.com/shettynitis/LLM_LegalDocSummarization/blob/main/Serving/fastapi_onnx/app/main.py)
+- Dockerfile: [`Dockerfile`](https://github.com/shettynitis/LLM_LegalDocSummarization/blob/main/Serving/fastapi_onnx/Dockerfile)
+- Input: User Prompt appended with RAG output
 - Output: summary text
 
 ### 9.2 Offline Evaluation
@@ -262,9 +259,9 @@ Steps handled in [`data_preprocessing.py`](https://github.com/shettynitis/LLM_Le
 
 ## 11. CI/CD & Continuous Training
 
-- GitHub Actions workflow: [`.github/workflows/ci_cd.yml`](.github/workflows/ci_cd.yml)
+- GitHub Actions workflow: [`CI git merge test`]([.github/workflows/ci_cd.yml](https://github.com/shettynitis/LLM_LegalDocSummarization/blob/main/.github/workflows/ci.yml))
 - Triggers: push to `main` → tests → build Docker images → deploy to staging
-- Retraining triggered by Airflow DAG with new data
+- Flask App: We have a flask app, which takes input from user, looks up on RAG, appends it to the user promt, sends the request with the new promt to our ONNX model through FastAPI, which then returns the summary. The summary is then appended to the UI, and user has the option to download the summary text. [Code](https://github.com/shettynitis/LLM_LegalDocSummarization/tree/main/app_flask)
 
 ---
 
