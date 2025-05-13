@@ -239,7 +239,7 @@ Steps handled in [`data_preprocessing.py`](https://github.com/shettynitis/LLM_Le
 ### 8.4 Retrain Code
 
 - Retrain Yaml: [`train.yml`](ci-cd/workflows/train-model.yaml)
-- Retrain-code: [`train.py`](ci-cd/flow(1).py)
+- Retrain-code: [`train.py`](Ray-Train/flow(1).py)
 
 ---
 
