@@ -277,8 +277,8 @@ Steps handled in [`data_preprocessing.py`](https://github.com/shettynitis/LLM_Le
 
 - **Monitoring Dashboards:** [Grafana config](https://github.com/shettynitis/LLM_LegalDocSummarization/blob/main/Monitoring_and_Evaluation/docker-compose-prometheus.yml)
 - **Closing the feedback loop:**: [LabelStudio](https://github.com/shettynitis/LLM_LegalDocSummarization/tree/main/Monitoring_and_Evaluation/closing_the_loop)
-- **Prometheus Dashboard:** [Dashboard](http://129.114.26.127:9090)
-- **Grafana Dashboard:** [Dashboard](http://129.114.26.127:3000)
+- **Prometheus Dashboard:** [Dashboard](http://129.114.25.240:9090)
+- **Grafana Dashboard:** [Dashboard](http://129.114.25.240:3000)
 
 ---
 
